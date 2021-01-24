@@ -7,7 +7,7 @@ import holoviews as hv
 import pandas as pd
 import panel as pn
 
-from holoviews.operation.datashader import datashade
+from holoviews.operation.datashader import datashade, rasterize, spread
 
 from .utils import load_grid_from_disk
 from .utils import load_elevation_from_disk
@@ -15,6 +15,9 @@ from .utils import load_elevation_from_disk
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+
+from datashader.colors import viridis
+from holoviews import opts
 
 from matplotlib import animation
 
@@ -99,9 +102,9 @@ def elevation_max(data_dir: pathlib.Path):
     xyz_points = pd.DataFrame(dict(x=x, y=y, z=z))
     points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
     trimesh = hv.TriMesh((simplices, points))
-    datashaded_trimesh = datashade(trimesh).opts(
-        width=1200,
-        height=900,
+    opts.defaults(opts.WMTS(width=1200, height=900))
+    datashaded_trimesh = rasterize(trimesh,aggregator='mean').opts(
+        colorbar=True, cmap='Viridis', clim=(z.min(), z.max())
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
@@ -113,3 +116,23 @@ def video(data_dir: pathlib.Path):
     video = pn.pane.Video(mp4, width=640, height=360, loop=True)
     row = pn.Row(video.controls(jslink=True), video)
     return row
+
+def grid(data_dir: pathlib.Path):
+    # load data
+    grid_path = data_dir / "grid.npz"
+    elevation_max_path = data_dir / "elevation.max.npz"
+    x, y, simplices = load_grid_from_disk(grid_path)
+    z = load_elevation_from_disk(elevation_max_path)
+    # create panel objects
+    xyz_points = pd.DataFrame(dict(x=x, y=y, z=z))
+    points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
+    trimesh = hv.TriMesh((simplices, points)).edgepaths
+    datashaded_trimesh = datashade(trimesh, precompute=True , cmap=['black']).opts(
+        width=1200,
+        height=900
+    )
+    tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
+    layout = tiles * datashaded_trimesh
+    return layout
+
+
