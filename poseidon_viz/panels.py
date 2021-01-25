@@ -104,7 +104,7 @@ def elevation_max(data_dir: pathlib.Path):
     opts.defaults(opts.WMTS(width=1200, height=900))
     datashaded_trimesh = (
         rasterize(trimesh, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()))
+        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters')
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
