@@ -10,8 +10,12 @@ set -xeuo pipefail
 memory='240g'
 cpu_shares=512
 
-port=59823
-container_name=panos_poseidon_test
+port=63999
+image_fqdn='thalassa_panel:runtime'
+container_name='thalassa_panel'
+
+data_directory='/eos/jeodpp/data/projects/CRITECH/docker_mounts/thalassa_panel'
+#data_directory="$(pwd)/data"
 
 set +e
 echo 'Removing container (if it exists):' "${container_name}"
@@ -30,9 +34,8 @@ docker run \
   --ulimit core=0 \
   --memory "${memory}" \
   --cpu-shares "${cpu_shares}" \
-  --mount type=bind,source="$(pwd)"/data,target=/data,readonly \
+  --mount type=bind,source="${data_directory}",target=/data,readonly \
   --name "${container_name}" \
   --publish "${port}":8000 \
-  docker.io/library/poseidon-panel:base \
-  pv serve --websocket-origin localhost:59823 --port 8000 --no-show
-
+  "${image_fqdn}" \
+  pv serve --websocket-origin 0.0.0.0:"${port}" --port 8000 --no-show

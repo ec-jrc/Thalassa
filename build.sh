@@ -7,7 +7,7 @@ export DOCKER_BUILDKIT=1
 
 registry_url='docker.io'
 registry_namespace='pmav99'
-image_name='poseidon-panel'
+image_name='thalassa_panel'
 image_fqdn="${registry_url}"/"${registry_namespace}"/"${image_name}"
 
 # Control docker build
@@ -18,16 +18,21 @@ create_date_tags="${DOCKER_BUILD_CREATE_DATE_TAGS:-1}"
 creation_date=$(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 revision_hash=$(git rev-parse HEAD)
 
+# Create wheel file and export requirements.txt
+poetry build
+poetry export --without-hashes --format requirements.txt --output requirements.txt
+
+# Build docker image
 docker build \
   --target base \
   --progress="${progress_mode}" \
   --label org.opencontainers.image.created="${creation_date}" \
   --label org.opencontainers.image.revision="${revision_hash}" \
-  -t "${image_name}":base \
+  -t "${image_name}":runtime \
   ./
 
 # Create date tags
 if [ "${create_date_tags}" -eq 1 ]; then
   creation_date_tag=$(date -u +"%Y%m%d")
-  docker tag "${image_name}":base "${image_fqdn}":runtime-"${creation_date_tag}"
+  docker tag "${image_name}":runtime "${-mage_fqdn}":runtime-"${creation_date_tag}"
 fi
