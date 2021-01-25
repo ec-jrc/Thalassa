@@ -120,12 +120,10 @@ def video(data_dir: pathlib.Path):
 def grid(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
-    elevation_max_path = data_dir / "elevation.max.npz"
     x, y, simplices = load_grid_from_disk(grid_path)
-    z = load_elevation_from_disk(elevation_max_path)
     # create panel objects
-    xyz_points = pd.DataFrame(dict(x=x, y=y, z=z))
-    points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
+    xy_points = pd.DataFrame(dict(x=x, y=y))
+    points = hv.Points(xy_points, kdims=["x", "y"])
     trimesh = hv.TriMesh((simplices, points)).edgepaths
     datashaded_trimesh = datashade(trimesh, precompute=True , cmap=['black']).opts(
         width=1200,
