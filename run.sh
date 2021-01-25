@@ -14,7 +14,7 @@ port=63999
 image_fqdn='thalassa_panel:runtime'
 container_name='thalassa_panel'
 
-data_directory='/eos/jeodpp/data/projects/CRITECH/docker_mounts/thalassa_panel'
+data_directory='/eos/jeodpp/data/projects/CRITECH/docker_mounts/thalassa_panel_data'
 #data_directory="$(pwd)/data"
 
 set +e
