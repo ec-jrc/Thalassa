@@ -102,8 +102,9 @@ def elevation_max(data_dir: pathlib.Path):
     points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
     trimesh = hv.TriMesh((simplices, points))
     opts.defaults(opts.WMTS(width=1200, height=900))
-    datashaded_trimesh = rasterize(trimesh,aggregator='mean').opts(
-        colorbar=True, cmap='Viridis', clim=(z.min(), z.max())
+    datashaded_trimesh = (
+        rasterize(trimesh, aggregator='mean')
+        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()))
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
@@ -116,6 +117,7 @@ def video(data_dir: pathlib.Path):
     row = pn.Row(video.controls(jslink=True), video)
     return row
 
+
 def grid(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
@@ -124,12 +126,10 @@ def grid(data_dir: pathlib.Path):
     xy_points = pd.DataFrame(dict(x=x, y=y))
     points = hv.Points(xy_points, kdims=["x", "y"])
     trimesh = hv.TriMesh((simplices, points)).edgepaths
-    datashaded_trimesh = datashade(trimesh, precompute=True , cmap=['black']).opts(
-        width=1200,
-        height=900
+    datashaded_trimesh = (
+        datashade(trimesh, precompute=True, cmap=['black'])
+        .opts(width=1200, height=900)
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
     return layout
-
-
