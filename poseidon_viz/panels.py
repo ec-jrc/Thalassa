@@ -133,3 +133,24 @@ def grid(data_dir: pathlib.Path):
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
     return layout
+
+
+def about():
+   # 
+   layout = pn.Column(
+       "#The model",
+       pn.Row(
+        "Thalassa is powered by"
+        "- [pyPoseidon](https://github.com/brey/pyPoseidon)"
+        "- [SCHISM](https://github.com/schism-dev/schism)"
+        "- [Panel](https://panel.holoviz.org/index.html)"
+        ),
+       pn.Row(
+        "### Info\n\n"
+        "- Ask a question on [Slack](https://pyposeidon.slack.com)\n"
+   
+        ),
+        )
+   return layout
+
+

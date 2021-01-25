@@ -105,18 +105,21 @@ def serve(
     from .panels import elevation_max
     from .panels import video
     from .panels import grid
+    from .panels import about
     panel.serve(
         panels={
+            "About": lambda: about(),
             "Mesh": lambda: grid(data_dir),
-            "Elevation_max": lambda: elevation_max(data_dir),
+            "Elevation": lambda: elevation_max(data_dir),
             "Animation": lambda: video(data_dir),
             "Stations": "##Time Series",
         },
         title={
-            "Mesh": 'Display grid',
-            'Elevation_max': 'Interactive map with the maximum elevation in the next 72hours',
-            'Animation': 'Video with the evolution of elevation data',
-            'Stations': 'A Markdown App',
+            "About": "General Info",
+            "Mesh": "Display grid",
+            "Elevation": "Interactive map with the maximum elevation in the next 72hours",
+            "Animation": "Video with the evolution of elevation data",
+            "Stations": "A Markdown App",
         },
         port=port,
         index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
