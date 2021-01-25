@@ -7,7 +7,7 @@ import holoviews as hv
 import pandas as pd
 import panel as pn
 
-from holoviews.operation.datashader import datashade, rasterize, spread
+from holoviews.operation.datashader import datashade, rasterize
 
 from .utils import load_grid_from_disk
 from .utils import load_elevation_from_disk
@@ -16,7 +16,6 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from datashader.colors import viridis
 from holoviews import opts
 
 from matplotlib import animation
