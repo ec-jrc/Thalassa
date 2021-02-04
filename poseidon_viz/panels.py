@@ -217,8 +217,8 @@ def elevation(data_dir: pathlib.Path):
     t_widget = pn.widgets.Select()
 
     @pn.depends(t_widget)
-    def t_plot(time): 
-        return tiles * datashaded_trimesh 
+    def t_plot(time):
+        return tiles * datashaded_trimesh
 
     header = get_header(title="## Time Steps")
 
@@ -268,13 +268,9 @@ def about(data_dir: pathlib.Path):
 
 
 def time_series(data_dir: pathlib.Path):
-
    tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name='Web Map Tile Services')
-
    widgets = pn.WidgetBox(tiles_widget, margin=5)
-
    header = get_header(title="## Validation")
-
    l_path = data_dir / "stations.csv"
    stations=pd.read_csv(l_path,index_col=[0])
 
@@ -333,7 +329,7 @@ def time_series(data_dir: pathlib.Path):
    graph = hv.DynamicMap(select_tg, streams=[index_stream])
 
    @pn.depends(tiles_widget)
-   def tplot(tile): 
+   def tplot(tile):
         return tile.opts(height=500, width=833) * tgs
 
 
@@ -351,9 +347,6 @@ def time_series(data_dir: pathlib.Path):
 
       On the map use Esc to go back to full selection'
       '''
-
-
    footer = pn.Row(pn.pane.Markdown(text))
-
    disclaimer = get_disclaimer()
    return pn.Column(header, body, footer, disclaimer)
