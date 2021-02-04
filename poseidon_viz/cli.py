@@ -7,17 +7,11 @@ import subprocess
 import sys
 
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Union
 
 import typer
 
 from . import utils
 from . import paths
-# from .utils import get_dataset
-# from .utils import save_elevation_to_disk
-# from .utils import save_grid_to_disk
 
 
 def create_dir(path: pathlib.Path) -> None:
@@ -93,8 +87,7 @@ def generate_video(
 @app.command(help="Start panel server")
 def serve(
     data_dir: pathlib.Path = typer.Argument(
-        "data", file_okay=False, dir_okay=True, resolve_path=True,
-        help="The directory that contains the output that will be visualized",
+        "data", file_okay=False, dir_okay=True, resolve_path=True, help="The directory that contains the output that will be visualized",
     ),
     port: int = typer.Option(0, help="Specify the port on which the server will be listening to. A random one is chosen by default."),
     websocket_origin: str = typer.Option("localhost", help="The host that can connect to the websocket"),

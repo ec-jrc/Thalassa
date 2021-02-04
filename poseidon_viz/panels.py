@@ -190,7 +190,6 @@ def elevation_max(data_dir: pathlib.Path):
     return pn.Column(header, layout, disclaimer)
 
 
-
 def elevation(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
