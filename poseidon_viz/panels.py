@@ -46,6 +46,40 @@ decision making process.
 
 """.strip()
 
+ABOUT_TEXT = """\
+
+# The model
+
+- An unstructured grid with variable size is used to simulate the storm surge globally.
+  Current runs utilize 128 cores on a HPC infrastructure.
+
+- The Bathymetric dataset used is GEBCO 2019.
+
+- The atmospheric forcing is the 10m wind speed and sea level atmospheric pressure retrieved
+  automatically from the ECMWF high-resolution forecast (HRES) system.
+
+- The operational system runs twice per day using the 00:00 and 12:00 meteo data and produces hourly
+  storm surge level forecasts for the next 72 hours.
+
+- The simulation timestep is 300-400 sec. Vvirtual stations where setup where data for validation is
+  available. Map data of the whole model domain is saved every 1 hour.
+
+# The software
+
+Thalassa is powered by
+
+- [pyPoseidon](https://github.com/brey/pyPoseidon)
+
+- [SCHISM](https://github.com/schism-dev/schism)
+
+- [Panel](https://panel.holoviz.org/index.html)
+)
+
+# Info
+
+- Ask a question on [Slack](https://pyposeidon.slack.com)
+
+""".strip()
 
 
 def get_disclaimer():
@@ -236,44 +270,12 @@ def grid(data_dir: pathlib.Path):
 
 
 def about(data_dir: pathlib.Path):
-   # 
-   layout = pn.pane.Markdown(
-   '''
-    #The model
-    
-    
-    An unstructured grid with variable size is used to simulate the storm surge globally. Current runs utilize 128 cores on a HPC infrastructure.     
-    
-    The Bathymetric dataset used is GEBCO 2019.
-
-    The atmospheric forcing is the 10m wind speed and sea level atmospheric pressure retrieved automatically from the ECMWF high-resolution forecast (HRES) system.
-    
-    The operational system runs twice per day using the 00:00 and 12:00 meteo data and produces hourly storm surge level forecasts for the next 72 hours. 
-
-    The simulation timestep is 300-400 sec. Vvirtual stations where setup where data for validation is available. Map data of the whole model domain is saved every 1 hour.  
-
-    
-    Thalassa is powered by
-    
-    - [pyPoseidon](https://github.com/brey/pyPoseidon)
-    
-    - [SCHISM](https://github.com/schism-dev/schism)
-    
-    - [Panel](https://panel.holoviz.org/index.html)
-    )
-
-    ### Info
-    
-    - Ask a question on [Slack](https://pyposeidon.slack.com)
-
-'''
-     ,width=1000, height=600)
-
-   title = '## About'
-   logo = get_logo()
-   header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-   disclaimer = get_disclaimer()
-   return pn.Column(header, layout, disclaimer)
+    layout = pn.pane.Markdown(ABOUT_TEXT, width=1000, height=600)
+    title = '## About'
+    logo = get_logo()
+    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    disclaimer = get_disclaimer()
+    return pn.Column(header, layout, disclaimer)
 
 
 def time_series(data_dir: pathlib.Path):
