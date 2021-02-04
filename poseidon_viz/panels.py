@@ -35,16 +35,21 @@ plt.rcParams['animation.embed_limit'] = '200.'
 plt.style.use(['dark_background'])
 
 
-disclaimer = pn.pane.Markdown(
-   '''
-    ### Disclaimer
-        These visualizations are provided as a proof of concept research tool. 
-    
-        This information is provided "as is" and it is purely indicative and should not be used for any decision making process.
-   
-   '''
-    ,width=1000, height=80, background='#f0f0f0')
+DISCLAIMER_TEXT = """\
+### Disclaimer
 
+These visualizations are provided as a proof of concept research tool.
+
+This information is provided "as is" and it is purely indicative and should not be used for any
+decision making process.
+
+""".strip()
+
+
+
+def get_disclaimer():
+    disclaimer = pn.pane.Markdown(DISCLAIMER_TEXT, width=1000, height=80, background='#f0f0f0')
+    return disclaimer
 
 
 class AAA:
@@ -142,8 +147,9 @@ def elevation_max(data_dir: pathlib.Path):
    # logo -----------------------------
 
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    disclaimer = get_disclaimer()
 
-    return pn.Column(header, layout,disclaimer)
+    return pn.Column(header, layout, disclaimer)
 
 
 
@@ -194,6 +200,7 @@ def elevation(data_dir: pathlib.Path):
       Use the toolbox on the right to zoom in/out.
       '''
     footer = pn.Row(pn.pane.Markdown(text))
+    disclaimer = get_disclaimer()
 
     return pn.Column(header, t_plot, footer, disclaimer)
 
@@ -213,7 +220,8 @@ def video(data_dir: pathlib.Path):
     mp4 = (data_dir / "animation.mp4").resolve().as_posix()
     video = pn.pane.Video(mp4, width=640, height=360, loop=True)
     row = pn.Row(video.controls(jslink=True), video)
-    return pn.Column(header, row,disclaimer)
+    disclaimer = get_disclaimer()
+    return pn.Column(header, row, disclaimer)
 
 
 def grid(data_dir: pathlib.Path):
@@ -241,8 +249,8 @@ def grid(data_dir: pathlib.Path):
     logo = pn.pane.HTML(hlogo, width=200, align='center')
    # logo -----------------------------
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-    return pn.Column(header, layout,disclaimer)
+    disclaimer = get_disclaimer()
+    return pn.Column(header, layout, disclaimer)
 
 
 def about(data_dir: pathlib.Path):
@@ -288,8 +296,8 @@ def about(data_dir: pathlib.Path):
    logo = pn.pane.HTML(hlogo, width=200, align='center')
    # logo -----------------------------
    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-   return pn.Column(header, layout,disclaimer)
+   disclaimer = get_disclaimer()
+   return pn.Column(header, layout, disclaimer)
 
 
 def time_series(data_dir: pathlib.Path):
@@ -388,4 +396,5 @@ def time_series(data_dir: pathlib.Path):
 
    footer = pn.Row(pn.pane.Markdown(text))
 
+   disclaimer = get_disclaimer()
    return pn.Column(header, body, footer, disclaimer)
