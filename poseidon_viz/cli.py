@@ -103,23 +103,27 @@ def serve(
     # Move imports in here for improved performance
     import panel
     from .panels import elevation_max
+    from .panels import elevation
     from .panels import video
     from .panels import grid
     from .panels import about
+    from .panels import time_series
     panel.serve(
         panels={
-            "About": lambda: about(),
+            "About": lambda: about(data_dir),
             "Mesh": lambda: grid(data_dir),
-            "Elevation": lambda: elevation_max(data_dir),
+            "Max_Elevation": lambda: elevation_max(data_dir),
+            "Elevation": lambda: elevation(data_dir),
             "Animation": lambda: video(data_dir),
-            "Stations": "##Time Series",
+            "Stations": lambda: time_series(data_dir)
         },
         title={
             "About": "General Info",
             "Mesh": "Display grid",
-            "Elevation": "Interactive map with the maximum elevation in the next 72hours",
+            "Max_Elevation": "Interactive map with the maximum elevation in the next 72hours",
+            "Elevation": "Interactive maps with hourly elevation for the next 72hours",
             "Animation": "Video with the evolution of elevation data",
-            "Stations": "A Markdown App",
+            "Stations": "Tide guage Time Series",
         },
         port=port,
         index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
