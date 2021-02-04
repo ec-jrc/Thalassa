@@ -90,7 +90,7 @@ def get_disclaimer():
 def get_logo():
     logo_path = STATIC / "thalassa.png"
     encoded_logo = base64.b64encode(logo_path.read_bytes())
-    html_logo_tag = f"<img src='data:image/png;base64,{encoded_logo.decode('utf8')}' width='142px' height='120px' alt='Thalassa Logo'></img>"
+    html_logo_tag = f"<a class='navbar-brand' href='./' id='logo'><img src='data:image/png;base64,{encoded_logo.decode('utf8')}' width='142px' height='120px' alt='Thalassa Logo'></img></a>"
     logo = pn.pane.HTML(html_logo_tag, width=200, align="center")
     return logo
 
