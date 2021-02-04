@@ -9,6 +9,7 @@ import panel as pn
 
 from holoviews.operation.datashader import datashade, rasterize
 
+from .paths import STATIC
 from .utils import load_grid_from_disk
 from .utils import load_elevation_from_disk
 from .utils import get_dataset
@@ -50,6 +51,14 @@ decision making process.
 def get_disclaimer():
     disclaimer = pn.pane.Markdown(DISCLAIMER_TEXT, width=1000, height=80, background='#f0f0f0')
     return disclaimer
+
+
+def get_logo():
+    logo_path = STATIC / "thalassa.png"
+    encoded_logo = base64.b64encode(logo_path.read_bytes())
+    html_logo_tag = f"<img src='data:image/png;base64,{encoded_logo.decode('utf8')}' width='142px' height='120px' alt='Thalassa Logo'></img>"
+    logo = pn.pane.HTML(html_logo_tag, width=200, align="center")
+    return logo
 
 
 class AAA:
@@ -137,15 +146,7 @@ def elevation_max(data_dir: pathlib.Path):
     layout = tiles * datashaded_trimesh
 
     title = '## Max elevation for the next 72 hours'
-
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-
+    logo = get_logo()
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
     disclaimer = get_disclaimer()
 
@@ -185,15 +186,8 @@ def elevation(data_dir: pathlib.Path):
 
 
     title = '## Time Steps '
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
+    logo = get_logo()
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
 
     text = '''
       # USAGE
@@ -208,13 +202,7 @@ def elevation(data_dir: pathlib.Path):
 def video(data_dir: pathlib.Path):
 
     title = '## Animation'
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
+    logo = get_logo()
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
 
     mp4 = (data_dir / "animation.mp4").resolve().as_posix()
@@ -241,13 +229,7 @@ def grid(data_dir: pathlib.Path):
 
     title = '## Mesh'
 
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
+    logo = get_logo()
     header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
     disclaimer = get_disclaimer()
     return pn.Column(header, layout, disclaimer)
@@ -288,13 +270,7 @@ def about(data_dir: pathlib.Path):
      ,width=1000, height=600)
 
    title = '## About'
-   # logo -----------------------------
-   l_path = data_dir / "thalassa.png"
-   with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-   hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-   logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
+   logo = get_logo()
    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
    disclaimer = get_disclaimer()
    return pn.Column(header, layout, disclaimer)
@@ -306,14 +282,8 @@ def time_series(data_dir: pathlib.Path):
 
    title = '## Validation '
    widgets = pn.WidgetBox(tiles_widget, margin=5)
-  
-   # logo -----------------------------
-   l_path = data_dir / "thalassa.png"
-   with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-   hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-   logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
+
+   logo = get_logo()
    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
 
    l_path = data_dir / "stations.csv"
