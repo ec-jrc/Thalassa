@@ -83,7 +83,7 @@ Thalassa is powered by
 
 
 def get_disclaimer():
-    disclaimer = pn.pane.Markdown(DISCLAIMER_TEXT, width=1000, height=80, background='#f0f0f0')
+    disclaimer = pn.pane.Markdown(DISCLAIMER_TEXT, width=1000, background="#f8d7da")
     return disclaimer
 
 
