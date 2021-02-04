@@ -95,6 +95,12 @@ def get_logo():
     return logo
 
 
+def get_header(title: str):
+    logo = get_logo()
+    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    return header
+
+
 class AAA:
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
@@ -160,7 +166,6 @@ class AAA:
         return v
 
 
-
 def elevation_max(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
@@ -179,9 +184,7 @@ def elevation_max(data_dir: pathlib.Path):
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
 
-    title = '## Max elevation for the next 72 hours'
-    logo = get_logo()
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    header = get_header(title="## Max elevation for the next 72 hours")
     disclaimer = get_disclaimer()
 
     return pn.Column(header, layout, disclaimer)
@@ -218,10 +221,7 @@ def elevation(data_dir: pathlib.Path):
     def t_plot(time): 
         return tiles * datashaded_trimesh 
 
-
-    title = '## Time Steps '
-    logo = get_logo()
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    header = get_header(title="## Time Steps")
 
     text = '''
       # USAGE
@@ -234,11 +234,7 @@ def elevation(data_dir: pathlib.Path):
 
 
 def video(data_dir: pathlib.Path):
-
-    title = '## Animation'
-    logo = get_logo()
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
+    header = get_header(title="## Animation")
     mp4 = (data_dir / "animation.mp4").resolve().as_posix()
     video = pn.pane.Video(mp4, width=640, height=360, loop=True)
     row = pn.Row(video.controls(jslink=True), video)
@@ -260,20 +256,14 @@ def grid(data_dir: pathlib.Path):
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
-
-    title = '## Mesh'
-
-    logo = get_logo()
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    header = get_header(title="## Mesh")
     disclaimer = get_disclaimer()
     return pn.Column(header, layout, disclaimer)
 
 
 def about(data_dir: pathlib.Path):
     layout = pn.pane.Markdown(ABOUT_TEXT, width=1000, height=600)
-    title = '## About'
-    logo = get_logo()
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    header = get_header(title="## About")
     disclaimer = get_disclaimer()
     return pn.Column(header, layout, disclaimer)
 
@@ -282,11 +272,9 @@ def time_series(data_dir: pathlib.Path):
 
    tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name='Web Map Tile Services')
 
-   title = '## Validation '
    widgets = pn.WidgetBox(tiles_widget, margin=5)
 
-   logo = get_logo()
-   header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+   header = get_header(title="## Validation")
 
    l_path = data_dir / "stations.csv"
    stations=pd.read_csv(l_path,index_col=[0])
