@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import pathlib
 
 import geoviews as gv
@@ -34,6 +35,10 @@ mpl.rc('animation', html='html5')
 plt.rcParams["animation.html"] = "jshtml"
 plt.rcParams['animation.embed_limit'] = '200.'
 plt.style.use(['dark_background'])
+
+# https://towardsdatascience.com/advanced-data-visualization-with-holoviews-e7263ad202e
+# https://github.com/holoviz/holoviews/issues/1713
+DTF = DatetimeTickFormatter(days="%d-%m-%Y", months="%d-%m-%Y", years="%m-%Y")
 
 
 DISCLAIMER_TEXT = """\
@@ -267,68 +272,60 @@ def about(data_dir: pathlib.Path):
     return pn.Column(header, layout, disclaimer)
 
 
+def get_station_dataframe(data_dir: pathlib.Path, name: str):
+    s_path = data_dir / "stations.tar.gz"
+    with tarfile.open(s_path, "r:*") as tar:
+        csv_path = "STATIONS/sim_{}.csv".format(name)
+        dfa = pd.read_csv(tar.extractfile(csv_path), index_col=[0, 1])
+    df = dfa.loc["l0"]
+    df = df.drop_duplicates()
+    df = df.reset_index()
+    df.columns = ["Time", "Elevation"]
+    df["Elevation"] = df.Elevation.astype(float)
+    df["Time"] = pd.to_datetime(df["Time"])
+    df["Time"] = df.Time.dt.tz_localize("UTC")
+    return df
+
+
+def select_tg(data_dir, tgs, index):
+    # https://github.com/holoviz/hvplot/issues/180
+    hover = HoverTool(
+        tooltips=[("Time", "@Time{%F}"), ("Elevation", "@Elevation")],
+        formatters={"@Time": "datetime"},  # use 'datetime' formatter for '@date' field
+    )
+    if not index:
+        name = ""
+        df = pd.DataFrame({"Time": [], "Elevation": []})
+        df = df.hvplot("Time", "Elevation", color="green", width=833, height=250, padding=0.1)
+    else:
+        name = tgs.data.iloc[index[0]].Name
+        df = get_station_dataframe(data_dir, name)
+    dataset = hv.Dataset(df)
+    curve = hv.Curve(dataset, kdims=["Time"], vdims=["Elevation"])
+    curve = curve.opts(
+        color="green", width=833, height=350, padding=0.1, framewise=True, xformatter=DTF, title=name, tools=[hover]
+    )
+    return curve
+
+
 def time_series(data_dir: pathlib.Path):
     tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name="Web Map Tile Services")
     widgets = pn.WidgetBox(tiles_widget, margin=5)
     header = get_header(title="## Validation")
-    l_path = data_dir / "stations.csv"
-    stations = pd.read_csv(l_path, index_col=[0])
+    stations = pd.read_csv(data_dir / "stations.csv", index_col=[0])
 
     # https://github.com/holoviz/hvplot/issues/180
-    hover = HoverTool(
-        tooltips=[
-            ("Name", "@Name"),
-            #                            ("Group", "@Group")
-        ]
-    )
+    hover = HoverTool(tooltips=[("Name", "@Name")])
 
     tgs = stations.hvplot.points(
         x="lon", y="lat", hover_cols=["Name"], geo=True, tools=["tap", hover], selection_line_color="red", s=100, color="orange"
     )
 
-    def get_data(name):
-        s_path = data_dir / "stations.tar.gz"
-        with tarfile.open(s_path, "r:*") as tar:
-            #    print(tar.getnames())
-            csv_path = "STATIONS/sim_{}.csv".format(name)
-            dfa = pd.read_csv(tar.extractfile(csv_path), index_col=[0, 1])
-        df = dfa.loc["l0"]
-        df = df.drop_duplicates()
-        df = df.reset_index()
-        df.columns = ["Time", "Elevation"]
-        df["Elevation"] = df.Elevation.astype(float)
-        df["Time"] = pd.to_datetime(df["Time"])
-        df["Time"] = df.Time.dt.tz_localize("UTC")
-        return df
-
-    # https://towardsdatascience.com/advanced-data-visualization-with-holoviews-e7263ad202e
-    # https://github.com/holoviz/holoviews/issues/1713
-    dtf = DatetimeTickFormatter(days="%d-%m-%Y", months="%d-%m-%Y", years="%m-%Y")
-
-    # https://github.com/holoviz/hvplot/issues/180
-    hover1 = HoverTool(
-        tooltips=[("Time", "@Time{%F}"), ("Elevation", "@Elevation")],
-        formatters={
-            "@Time": "datetime",  # use 'datetime' formatter for '@date' field
-        },
-    )
-
-    def select_tg(index):
-        if not index:
-            df = pd.DataFrame({"Time": [], "Elevation": []}).hvplot(
-                "Time", "Elevation", color="green", width=833, height=250, padding=0.1
-            )
-            name = ""
-        else:
-            name = tgs.data.iloc[index[0]].Name
-            df = get_data(name)
-        dataset = hv.Dataset(df)
-        return hv.Curve(dataset, kdims=["Time"], vdims=["Elevation"]).opts(
-            color="green", width=833, height=350, padding=0.1, framewise=True, xformatter=dtf, title=name, tools=[hover1]
-        )
-
+    # This is a complete hack, but I can't figure out how to pass extra arguments to
+    # `select_tg`. So, we use functools.partial to set the extra arguments on runtime.
+    select_tg_patched = functools.partial(select_tg, data_dir=data_dir, tgs=tgs)
     index_stream = Selection1D(source=tgs, index=[])
-    graph = hv.DynamicMap(select_tg, streams=[index_stream])
+    graph = hv.DynamicMap(select_tg_patched, streams=[index_stream])
 
     @pn.depends(tiles_widget)
     def tplot(tile):
