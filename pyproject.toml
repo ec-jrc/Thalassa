@@ -28,6 +28,8 @@ hvplot = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
+ipython = "^7.20.0"
+jedi = "<0.18"
 
 [tool.poetry.scripts]
 pv = "poseidon_viz.cli:app"
