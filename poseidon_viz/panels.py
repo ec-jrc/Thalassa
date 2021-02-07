@@ -184,7 +184,7 @@ def elevation_max(data_dir: pathlib.Path):
     opts.defaults(opts.WMTS(width=1200, height=900))
     datashaded_trimesh = (
         rasterize(trimesh, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters')
+        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters', tools=["hover"])
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
@@ -214,7 +214,7 @@ def elevation(data_dir: pathlib.Path):
 
     datashaded_trimesh = (
         rasterize(meshes, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters')
+        .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters', tools=["hover"])
     )
 
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
@@ -256,7 +256,7 @@ def grid(data_dir: pathlib.Path):
     trimesh = hv.TriMesh((simplices, points)).edgepaths
     datashaded_trimesh = (
         datashade(trimesh, precompute=True, cmap=['black'])
-        .opts(width=1200, height=900)
+        .opts(width=1200, height=900, tools=["hover"])
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
