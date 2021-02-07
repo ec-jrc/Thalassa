@@ -42,7 +42,7 @@ DTF = DatetimeTickFormatter(days="%d-%m-%Y", months="%d-%m-%Y", years="%m-%Y")
 
 
 DISCLAIMER_TEXT = """\
-### Disclaimer
+## Disclaimer
 
 These visualizations are provided as a proof of concept research tool.
 
@@ -88,7 +88,7 @@ Thalassa is powered by
 
 
 def get_disclaimer():
-    disclaimer = pn.pane.Markdown(DISCLAIMER_TEXT, width=1000, background="#f8d7da")
+    disclaimer = pn.pane.Alert(DISCLAIMER_TEXT, alert_type="danger")
     return disclaimer
 
 
