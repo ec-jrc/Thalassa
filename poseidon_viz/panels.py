@@ -49,6 +49,9 @@ These visualizations are provided as a proof of concept research tool.
 This information is provided "as is" and it is purely indicative and should not be used for any
 decision making process.
 
+This work represents solely the views of its author and cannot under any circumstances be regarded 
+as the official position of the European Commission or as a formal commitment from the EC.
+
 """.strip()
 
 ABOUT_TEXT = """\
@@ -78,7 +81,7 @@ Thalassa is powered by
 - [SCHISM](https://github.com/schism-dev/schism)
 
 - [Panel](https://panel.holoviz.org/index.html)
-)
+
 
 # Info
 
@@ -178,8 +181,8 @@ def elevation_max(data_dir: pathlib.Path):
     x, y, simplices = load_grid_from_disk(grid_path)
     z = load_elevation_from_disk(elevation_max_path)
     # create panel objects
-    xyz_points = pd.DataFrame(dict(x=x, y=y, z=z))
-    points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
+    xyz_points = pd.DataFrame(dict(longitude=x, latitude=y, elevation=z))
+    points = hv.Points(xyz_points, kdims=["longitude", "latitude"], vdims="elevation")
     trimesh = hv.TriMesh((simplices, points))
     opts.defaults(opts.WMTS(width=1200, height=900))
     datashaded_trimesh = (
@@ -202,8 +205,8 @@ def elevation(data_dir: pathlib.Path):
     x, y, simplices = load_grid_from_disk(grid_path)
     z = get_dataset(elevation_path)
     # create panel objects
-    xyz_points = pd.DataFrame(dict(x=x, y=y, z=z.elev.isel(time=0).values))
-    points = hv.Points(xyz_points, kdims=["x", "y"], vdims="z")
+    xyz_points = pd.DataFrame(dict(longitude=x, latitude=y, elevation=z.elev.isel(time=0).values))
+    points = hv.Points(xyz_points, kdims=["longitude", "latitude"], vdims="elevation")
     opts.defaults(opts.WMTS(width=1200, height=900))
 
     def time_mesh(time):
@@ -225,7 +228,7 @@ def elevation(data_dir: pathlib.Path):
     def t_plot(time):
         return tiles * datashaded_trimesh
 
-    header = get_header(title="## Time Steps")
+    header = get_header(title="## Hourly forecast for 72 hours")
 
     text = '''
       # USAGE
@@ -251,12 +254,12 @@ def grid(data_dir: pathlib.Path):
     grid_path = data_dir / "grid.npz"
     x, y, simplices = load_grid_from_disk(grid_path)
     # create panel objects
-    xy_points = pd.DataFrame(dict(x=x, y=y))
-    points = hv.Points(xy_points, kdims=["x", "y"])
+    xy_points = pd.DataFrame(dict(longitude=x, latitude=y))
+    points = hv.Points(xy_points, kdims=["longitude", "latitude"])
     trimesh = hv.TriMesh((simplices, points)).edgepaths
     datashaded_trimesh = (
         datashade(trimesh, precompute=True, cmap=['black'])
-        .opts(width=1200, height=900, tools=["hover"])
+        .opts(width=1200, height=900) #, tools=["hover"])
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
@@ -337,6 +340,8 @@ def time_series(data_dir: pathlib.Path):
       # USAGE
 
       Use the toolbox on the right to zoom in/out.
+
+      Click on any orange point to visualize the corresponding time series
 
       On the map use Esc to go back to full selection'
       """

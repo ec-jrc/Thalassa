@@ -105,16 +105,16 @@ def serve(
         panels={
             "About": lambda: about(data_dir),
             "Mesh": lambda: grid(data_dir),
-            "Max_Elevation": lambda: elevation_max(data_dir),
-            "Elevation": lambda: elevation(data_dir),
+            "Elevation": lambda: elevation_max(data_dir),
+            "Forecast": lambda: elevation(data_dir),
             "Animation": lambda: video(data_dir),
             "Stations": lambda: time_series(data_dir)
         },
         title={
             "About": "General Info",
             "Mesh": "Display grid",
-            "Max_Elevation": "Interactive map with the maximum elevation in the next 72hours",
-            "Elevation": "Interactive maps with hourly elevation for the next 72hours",
+            "Elevation": "Interactive map with the maximum elevation in the next 72hours",
+            "Forecast": "Interactive maps with hourly elevation for the next 72hours",
             "Animation": "Video with the evolution of elevation data",
             "Stations": "Tide guage Time Series",
         },
