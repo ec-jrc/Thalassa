@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import pathlib
 
 import geoviews as gv
@@ -9,6 +10,7 @@ import panel as pn
 
 from holoviews.operation.datashader import datashade, rasterize
 
+from .paths import STATIC
 from .utils import load_grid_from_disk
 from .utils import load_elevation_from_disk
 from .utils import get_dataset
@@ -34,17 +36,74 @@ plt.rcParams["animation.html"] = "jshtml"
 plt.rcParams['animation.embed_limit'] = '200.'
 plt.style.use(['dark_background'])
 
+# https://towardsdatascience.com/advanced-data-visualization-with-holoviews-e7263ad202e
+# https://github.com/holoviz/holoviews/issues/1713
+DTF = DatetimeTickFormatter(days="%d-%m-%Y", months="%d-%m-%Y", years="%m-%Y")
 
-disclaimer = pn.pane.Markdown(
-   '''
-    ### Disclaimer
-        These visualizations are provided as a proof of concept research tool. 
-    
-        This information is provided "as is" and it is purely indicative and should not be used for any decision making process.
-   
-   '''
-    ,width=1000, height=80, background='#f0f0f0')
 
+DISCLAIMER_TEXT = """\
+## Disclaimer
+
+These visualizations are provided as a proof of concept research tool.
+
+This information is provided "as is" and it is purely indicative and should not be used for any
+decision making process.
+
+""".strip()
+
+ABOUT_TEXT = """\
+
+# The model
+
+- An unstructured grid with variable size is used to simulate the storm surge globally.
+  Current runs utilize 128 cores on a HPC infrastructure.
+
+- The Bathymetric dataset used is GEBCO 2019.
+
+- The atmospheric forcing is the 10m wind speed and sea level atmospheric pressure retrieved
+  automatically from the ECMWF high-resolution forecast (HRES) system.
+
+- The operational system runs twice per day using the 00:00 and 12:00 meteo data and produces hourly
+  storm surge level forecasts for the next 72 hours.
+
+- The simulation timestep is 300-400 sec. Vvirtual stations where setup where data for validation is
+  available. Map data of the whole model domain is saved every 1 hour.
+
+# The software
+
+Thalassa is powered by
+
+- [pyPoseidon](https://github.com/brey/pyPoseidon)
+
+- [SCHISM](https://github.com/schism-dev/schism)
+
+- [Panel](https://panel.holoviz.org/index.html)
+)
+
+# Info
+
+- Ask a question on [Slack](https://pyposeidon.slack.com)
+
+""".strip()
+
+
+def get_disclaimer():
+    disclaimer = pn.pane.Alert(DISCLAIMER_TEXT, alert_type="danger")
+    return disclaimer
+
+
+def get_logo():
+    logo_path = STATIC / "thalassa.png"
+    encoded_logo = base64.b64encode(logo_path.read_bytes())
+    html_logo_tag = f"<a class='navbar-brand' href='./' id='logo'><img src='data:image/png;base64,{encoded_logo.decode('utf8')}' width='142px' height='120px' alt='Thalassa Logo'></img></a>"
+    logo = pn.pane.HTML(html_logo_tag, width=200, align="center")
+    return logo
+
+
+def get_header(title: str):
+    logo = get_logo()
+    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
+    return header
 
 
 class AAA:
@@ -112,7 +171,6 @@ class AAA:
         return v
 
 
-
 def elevation_max(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
@@ -126,25 +184,15 @@ def elevation_max(data_dir: pathlib.Path):
     opts.defaults(opts.WMTS(width=1200, height=900))
     datashaded_trimesh = (
         rasterize(trimesh, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters')
+        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters', tools=["hover"])
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
 
-    title = '## Max elevation for the next 72 hours'
+    header = get_header(title="## Max elevation for the next 72 hours")
+    disclaimer = get_disclaimer()
 
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-    return pn.Column(header, layout,disclaimer)
-
+    return pn.Column(header, layout, disclaimer)
 
 
 def elevation(data_dir: pathlib.Path):
@@ -166,7 +214,7 @@ def elevation(data_dir: pathlib.Path):
 
     datashaded_trimesh = (
         rasterize(meshes, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters')
+        .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters', tools=["hover"])
     )
 
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
@@ -174,46 +222,28 @@ def elevation(data_dir: pathlib.Path):
     t_widget = pn.widgets.Select()
 
     @pn.depends(t_widget)
-    def t_plot(time): 
-        return tiles * datashaded_trimesh 
+    def t_plot(time):
+        return tiles * datashaded_trimesh
 
-
-    title = '## Time Steps '
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
+    header = get_header(title="## Time Steps")
 
     text = '''
       # USAGE
       Use the toolbox on the right to zoom in/out.
       '''
     footer = pn.Row(pn.pane.Markdown(text))
+    disclaimer = get_disclaimer()
 
     return pn.Column(header, t_plot, footer, disclaimer)
 
 
 def video(data_dir: pathlib.Path):
-
-    title = '## Animation'
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
+    header = get_header(title="## Animation")
     mp4 = (data_dir / "animation.mp4").resolve().as_posix()
     video = pn.pane.Video(mp4, width=640, height=360, loop=True)
     row = pn.Row(video.controls(jslink=True), video)
-    return pn.Column(header, row,disclaimer)
+    disclaimer = get_disclaimer()
+    return pn.Column(header, row, disclaimer)
 
 
 def grid(data_dir: pathlib.Path):
@@ -226,166 +256,90 @@ def grid(data_dir: pathlib.Path):
     trimesh = hv.TriMesh((simplices, points)).edgepaths
     datashaded_trimesh = (
         datashade(trimesh, precompute=True, cmap=['black'])
-        .opts(width=1200, height=900)
+        .opts(width=1200, height=900, tools=["hover"])
     )
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
-
-    title = '## Mesh'
-
-   # logo -----------------------------
-    l_path = data_dir / "thalassa.png"
-    with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-    hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-    logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-    header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-    return pn.Column(header, layout,disclaimer)
+    header = get_header(title="## Mesh")
+    disclaimer = get_disclaimer()
+    return pn.Column(header, layout, disclaimer)
 
 
 def about(data_dir: pathlib.Path):
-   # 
-   layout = pn.pane.Markdown(
-   '''
-    #The model
-    
-    
-    An unstructured grid with variable size is used to simulate the storm surge globally. Current runs utilize 128 cores on a HPC infrastructure.     
-    
-    The Bathymetric dataset used is GEBCO 2019.
+    layout = pn.pane.Markdown(ABOUT_TEXT, width=1000, height=600)
+    header = get_header(title="## About")
+    disclaimer = get_disclaimer()
+    return pn.Column(header, layout, disclaimer)
 
-    The atmospheric forcing is the 10m wind speed and sea level atmospheric pressure retrieved automatically from the ECMWF high-resolution forecast (HRES) system.
-    
-    The operational system runs twice per day using the 00:00 and 12:00 meteo data and produces hourly storm surge level forecasts for the next 72 hours. 
 
-    The simulation timestep is 300-400 sec. Vvirtual stations where setup where data for validation is available. Map data of the whole model domain is saved every 1 hour.  
+def get_station_dataframe(data_dir: pathlib.Path, name: str):
+    s_path = data_dir / "stations.tar.gz"
+    with tarfile.open(s_path, "r:*") as tar:
+        csv_path = "STATIONS/sim_{}.csv".format(name)
+        dfa = pd.read_csv(tar.extractfile(csv_path), index_col=[0, 1])
+    df = dfa.loc["l0"]
+    df = df.drop_duplicates()
+    df = df.reset_index()
+    df.columns = ["Time", "Elevation"]
+    df["Elevation"] = df.Elevation.astype(float)
+    df["Time"] = pd.to_datetime(df["Time"])
+    df["Time"] = df.Time.dt.tz_localize("UTC")
+    return df
 
-    
-    Thalassa is powered by
-    
-    - [pyPoseidon](https://github.com/brey/pyPoseidon)
-    
-    - [SCHISM](https://github.com/schism-dev/schism)
-    
-    - [Panel](https://panel.holoviz.org/index.html)
+
+def select_tg(data_dir, tgs, index):
+    # https://github.com/holoviz/hvplot/issues/180
+    hover = HoverTool(
+        tooltips=[("Time", "@Time{%F}"), ("Elevation", "@Elevation")],
+        formatters={"@Time": "datetime"},  # use 'datetime' formatter for '@date' field
     )
-
-    ### Info
-    
-    - Ask a question on [Slack](https://pyposeidon.slack.com)
-
-'''
-     ,width=1000, height=600)
-
-   title = '## About'
-   # logo -----------------------------
-   l_path = data_dir / "thalassa.png"
-   with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-   hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-   logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-   header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-   return pn.Column(header, layout,disclaimer)
+    if not index:
+        name = ""
+        df = pd.DataFrame({"Time": [], "Elevation": []})
+        df = df.hvplot("Time", "Elevation", color="green", width=833, height=250, padding=0.1)
+    else:
+        name = tgs.data.iloc[index[0]].Name
+        df = get_station_dataframe(data_dir, name)
+    dataset = hv.Dataset(df)
+    curve = hv.Curve(dataset, kdims=["Time"], vdims=["Elevation"])
+    curve = curve.opts(
+        color="green", width=833, height=350, padding=0.1, framewise=True, xformatter=DTF, title=name, tools=[hover]
+    )
+    return curve
 
 
 def time_series(data_dir: pathlib.Path):
+    tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name="Web Map Tile Services")
+    widgets = pn.WidgetBox(tiles_widget, margin=5)
+    header = get_header(title="## Validation")
+    stations = pd.read_csv(data_dir / "stations.csv", index_col=[0])
 
-   tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name='Web Map Tile Services')
+    # https://github.com/holoviz/hvplot/issues/180
+    hover = HoverTool(tooltips=[("Name", "@Name")])
 
-   title = '## Validation '
-   widgets = pn.WidgetBox(tiles_widget, margin=5)
-  
-   # logo -----------------------------
-   l_path = data_dir / "thalassa.png"
-   with open( l_path, "rb") as image_file:
-      encoded_string = base64.b64encode(image_file.read())
-   hlogo = '<img src="data:image/png;base64,{}" width="142px" height="120px" alt="Panel Logo"></img>'.format(encoded_string.decode('utf-8'))
-   logo = pn.pane.HTML(hlogo, width=200, align='center')
-   # logo -----------------------------
-   header = pn.Row(logo, pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), pn.layout.Tabs(), title)
-
-   l_path = data_dir / "stations.csv"
-   stations=pd.read_csv(l_path,index_col=[0])
-
-   #https://github.com/holoviz/hvplot/issues/180
-   hover = HoverTool(tooltips=[
-                            ("Name", "@Name"),
-#                            ("Group", "@Group")
-                           ])
-
-   tgs = stations.hvplot.points(
-     x='lon', y='lat', hover_cols=['Name'], geo=True,
-      tools=['tap', hover], selection_line_color='red', s=100, color='orange')
-
-
-   def get_data(name):
-       s_path = data_dir / "stations.tar.gz"
-       with tarfile.open(s_path, "r:*") as tar:
-       #    print(tar.getnames())
-           csv_path = 'STATIONS/sim_{}.csv'.format(name)
-           dfa = pd.read_csv(tar.extractfile(csv_path), index_col=[0,1])
-       df = dfa.loc['l0']
-       df = df.drop_duplicates()
-       df = df.reset_index()
-       df.columns=['Time','Elevation']
-       df['Elevation']=df.Elevation.astype(float)
-       df['Time'] = pd.to_datetime(df['Time'])
-       df['Time'] = df.Time.dt.tz_localize('UTC')
-       return df
-
-
-  # https://towardsdatascience.com/advanced-data-visualization-with-holoviews-e7263ad202e
-  # https://github.com/holoviz/holoviews/issues/1713
-   dtf = DatetimeTickFormatter(days = '%d-%m-%Y', months = '%d-%m-%Y' , years = '%m-%Y')
-
-  #https://github.com/holoviz/hvplot/issues/180
-   hover1 = HoverTool(tooltips=[
-                            ("Time", "@Time{%F}"),
-                            ("Elevation", "@Elevation")
-                           ],
-                      formatters={
-        '@Time'        : 'datetime', # use 'datetime' formatter for '@date' field
-                      }
-                          )
-
-   def select_tg(index):
-       if not index:
-           df = pd.DataFrame({'Time':[],'Elevation':[]}).hvplot('Time', 'Elevation', color='green', width=833, height=250, padding=0.1)
-           name=''
-       else:
-           name = tgs.data.iloc[index[0]].Name
-           df = get_data(name)
-       dataset = hv.Dataset(df)
-       return hv.Curve(dataset, kdims=['Time'], vdims=['Elevation']).opts(color='green', width=833, height=350, padding=0.1, framewise=True, xformatter = dtf, title=name, tools=[hover1])
-
-   index_stream = Selection1D(source=tgs, index=[])
-   graph = hv.DynamicMap(select_tg, streams=[index_stream])
-
-   @pn.depends(tiles_widget)
-   def tplot(tile): 
-        return tile.opts(height=500, width=833) * tgs
-
-
-   body = pn.Column(
-        pn.Row(tplot,tiles_widget),
-        pn.Row(
-            pn.panel(graph)
-        )
+    tgs = stations.hvplot.points(
+        x="lon", y="lat", hover_cols=["Name"], geo=True, tools=["tap", hover], selection_line_color="red", s=100, color="orange"
     )
 
-   text = '''
+    # This is a complete hack, but I can't figure out how to pass extra arguments to
+    # `select_tg`. So, we use functools.partial to set the extra arguments on runtime.
+    select_tg_patched = functools.partial(select_tg, data_dir=data_dir, tgs=tgs)
+    index_stream = Selection1D(source=tgs, index=[])
+    graph = hv.DynamicMap(select_tg_patched, streams=[index_stream])
+
+    @pn.depends(tiles_widget)
+    def tplot(tile):
+        return tile.opts(height=500, width=833) * tgs
+
+    body = pn.Column(pn.Row(tplot, tiles_widget), pn.Row(pn.panel(graph)))
+
+    text = """
       # USAGE
 
       Use the toolbox on the right to zoom in/out.
 
       On the map use Esc to go back to full selection'
-      '''
-
-
-   footer = pn.Row(pn.pane.Markdown(text))
-
-   return pn.Column(header, body, footer, disclaimer)
+      """
+    footer = pn.Row(pn.pane.Markdown(text))
+    disclaimer = get_disclaimer()
+    return pn.Column(header, body, footer, disclaimer)
