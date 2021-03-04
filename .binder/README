@@ -1,0 +1,7 @@
+One needs to mask ../Dockerfile
+
+It builds but it only launches the notebook.
+
+I guess we need a version of cli.py to be in a notebook style.
+
+
