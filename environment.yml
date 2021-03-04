@@ -8,3 +8,6 @@ dependencies:
   - python=3.8
   - proj < 8
   - gdal=3.2.1
+  - pip:
+    - nbserverproxy
+    - jupyter-server-proxy
