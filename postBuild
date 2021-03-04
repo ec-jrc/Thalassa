@@ -1,3 +1,11 @@
 set -xe
 
-pv serve --websocket-origin 0.0.0.0:"${port}" --port 8000 --no-show
+pip install -r ./requirements.txt
+
+pip install .
+
+pip uninstall  -y numpy
+
+pip install numpy
+
+pv serve --websocket-origin "0.0.0.0" --port 8000  --no-show
