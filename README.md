@@ -1,4 +1,4 @@
-Large Scale Sea level visualizations based on unstructured mesh
+Large Scale Sea level visualizations of unstructured mesh data
 ===============================================================
 
 This is a developmental prototype for visualizing large scale results of hydrodynamic simulations.
@@ -15,4 +15,4 @@ Thalassa is powered by
 ## Instalation
 
 ## License
-* The project is released under the EUPL v1.2 license. 
+* The project is released under the EUPL v1.2 license.

@@ -178,8 +178,10 @@ def elevation_max(data_dir: pathlib.Path):
     # load data
     grid_path = data_dir / "grid.npz"
     elevation_max_path = data_dir / "elevation.max.npz"
+    elevation_path = data_dir / "elevation.nc"
     x, y, simplices = load_grid_from_disk(grid_path)
     z = load_elevation_from_disk(elevation_max_path)
+    w = get_dataset(elevation_path)
     # create panel objects
     xyz_points = pd.DataFrame(dict(longitude=x, latitude=y, elevation=z))
     points = hv.Points(xyz_points, kdims=["longitude", "latitude"], vdims="elevation")
@@ -192,7 +194,10 @@ def elevation_max(data_dir: pathlib.Path):
     tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
     layout = tiles * datashaded_trimesh
 
-    header = get_header(title="## Max elevation for the next 72 hours")
+    t0 = pd.to_datetime(w.time.values.min()).strftime(format='%Y-%m-%d:%H')
+    t1 = pd.to_datetime(w.time.values.max()).strftime(format='%Y-%m-%d:%H')
+
+    header = get_header(title="## Maximum forecasted elevation between {} and {}".format(t0,t1))
     disclaimer = get_disclaimer()
 
     return pn.Column(header, layout, disclaimer)
@@ -228,7 +233,11 @@ def elevation(data_dir: pathlib.Path):
     def t_plot(time):
         return tiles * datashaded_trimesh
 
-    header = get_header(title="## Hourly forecast for 72 hours")
+    tref_ = pd.to_datetime(z.time.values.min()) - pd.to_timedelta('1H')
+
+    tref = tref_.strftime(format='%Y-%m-%d:%H')
+
+    header = get_header(title="## Hourly sea level for 72 hours based on the {} forecast".format(tref))
 
     text = '''
       # USAGE
