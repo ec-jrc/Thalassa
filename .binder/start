@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+#pv serve --websocket-origin '*'
+panel serve poseidon_viz/Thalassa.ipynb --allow-websocket-origin=*
+
+exec "${@}"

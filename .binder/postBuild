@@ -1,19 +1,19 @@
-pip install -r ../requirements.txt
+#pip install requirements.txt
 
-pip install ..
+pip install .
 
-pip uninstall  -y numpy
+#pip uninstall  -y numpy
 
-pip install numpy
+#pip install numpy
 
-
+#panel serve poseidon_viz/Thalassa.ipynb
 
 #https://github.com/arturomoncadatorres/favorite-pokemon-interactive
 # Enable nbserverproxy
-#jupyter serverextension enable --sys-prefix nbserverproxy
+jupyter serverextension enable --sys-prefix nbserverproxy
 
 # Install the bokeh server extension so that Bokeh launches at startup
-#mv bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 
 # Enable Bokeh extension
-#jupyter serverextension enable --sys-prefix bokehserverextension
+jupyter serverextension enable --sys-prefix bokehserverextension

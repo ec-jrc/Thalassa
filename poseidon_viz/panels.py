@@ -10,10 +10,17 @@ import panel as pn
 
 from holoviews.operation.datashader import datashade, rasterize
 
-from .paths import STATIC
-from .utils import load_grid_from_disk
-from .utils import load_elevation_from_disk
-from .utils import get_dataset
+try:
+    from .paths import STATIC
+    from .utils import load_grid_from_disk
+    from .utils import load_elevation_from_disk
+    from .utils import get_dataset
+except:
+    from paths import STATIC
+    from utils import load_grid_from_disk
+    from utils import load_elevation_from_disk
+    from utils import get_dataset
+    
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -215,7 +222,7 @@ def elevation(data_dir: pathlib.Path):
     opts.defaults(opts.WMTS(width=1200, height=900))
 
     def time_mesh(time):
-        points.data.z = z.elev.sel(time=time).values
+        points.data.elevation = z.elev.sel(time=time).values
         return hv.TriMesh((simplices, points))#, crs=ccrs.GOOGLE_MERCATOR)
 
     meshes = hv.DynamicMap(time_mesh, kdims='Time').redim.values(Time=z.time.values)
