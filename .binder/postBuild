@@ -1,6 +1,7 @@
-#pip install requirements.txt
+#!/bin/bash
+set -xeuo pipefail
 
-pip install .
+#pip install .
 
 #pip uninstall  -y numpy
 
@@ -8,12 +9,24 @@ pip install .
 
 #panel serve poseidon_viz/Thalassa.ipynb
 
-#https://github.com/arturomoncadatorres/favorite-pokemon-interactive
-# Enable nbserverproxy
-jupyter serverextension enable --sys-prefix nbserverproxy
+mkdir data
+
+wget -O data/stations.csv "https://www.dropbox.com/s/q33b32kh37taohf/stations.csv?dl=1"
+wget -O data/grid.npz "https://www.dropbox.com/s/pu0yk0ew7hj8tvt/grid.npz?dl=1"
+wget -O data/animation.mp4 "https://www.dropbox.com/s/bvva8qkpd3nlwox/animation.mp4?dl=1"
+wget -O data/elevation.nc "https://www.dropbox.com/s/hkyhfve1pxyc4zn/elevation.nc?dl=1"
+
+
+#https://github.com/psychemedia/jupyterserverproxy-openrefine
+#python -m bash_kernel.install
+#mkdir -p $HOME/.jupyter/
+#mv .binder/jupyter_notebook_config.py $HOME/.jupyter/
+
+#https://github.com/binder-examples/bokeh
+jupyter labextension install @jupyterlab/server-proxy
+jupyter serverextension enable --sys-prefix jupyter_server_proxy
 
 # Install the bokeh server extension so that Bokeh launches at startup
 mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
-
 # Enable Bokeh extension
 jupyter serverextension enable --sys-prefix bokehserverextension
