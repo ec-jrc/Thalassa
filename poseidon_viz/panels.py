@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 import pathlib
+import zipfile
 
 import geoviews as gv
 import holoviews as hv
@@ -292,10 +293,10 @@ def about(data_dir: pathlib.Path):
 
 
 def get_station_dataframe(data_dir: pathlib.Path, name: str):
-    s_path = data_dir / "stations.tar.gz"
-    with tarfile.open(s_path, "r:*") as tar:
-        csv_path = "STATIONS/sim_{}.csv".format(name)
-        dfa = pd.read_csv(tar.extractfile(csv_path), index_col=[0, 1])
+    csv_path = "STATIONS/sim_{}.csv".format(name)
+    with zipfile.ZipFile(data_dir / "stations.zip") as zip_archive:
+        with zip_archive.open(csv_path) as fd:
+            dfa = pd.read_csv(fd, index_col=[0, 1])
     df = dfa.loc["l0"]
     df = df.drop_duplicates()
     df = df.reset_index()
