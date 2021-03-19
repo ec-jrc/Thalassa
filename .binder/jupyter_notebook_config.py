@@ -3,8 +3,8 @@
 c.ServerProxy.servers = {
     'Thalassa': {
      #  'command': ['/home/jovyan/.openrefine/openrefine-2.8/refine', '-p', '{port}','-d','/home/jovyan/openrefine'],
-        'command': ['panel', 'serve', 'poseidon_viz/Thalassa.ipynb' "--websocket-origin '*'",'-p', '{port}'],
-        'port': 3333,
+        'command': ['panel', 'serve', 'poseidon_viz/Thalassa.ipynb' "--allow-websocket-origin '*'",'-p', '{port}'],
+#       'port': 3333,
         'timeout': 120,
         'launcher_entry': {
             'enabled': True,
