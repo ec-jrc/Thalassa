@@ -1,14 +1,6 @@
 #!/bin/bash
 set -xeuo pipefail
 
-#pip install .
-
-#pip uninstall  -y numpy
-
-#pip install numpy
-
-#panel serve poseidon_viz/Thalassa.ipynb
-
 mkdir data
 
 wget -O data/stations.csv "https://www.dropbox.com/s/q33b32kh37taohf/stations.csv?dl=1"
@@ -18,15 +10,15 @@ wget -O data/elevation.nc "https://www.dropbox.com/s/hkyhfve1pxyc4zn/elevation.n
 
 
 #https://github.com/psychemedia/jupyterserverproxy-openrefine
-python -m bash_kernel.install
-mkdir -p $HOME/.jupyter/
-mv .binder/jupyter_notebook_config.py $HOME/.jupyter/
+#python -m bash_kernel.install
+.mkdir -p $HOME/.jupyter/
+.mv .binder/jupyter_notebook_config.py $HOME/.jupyter/
 
 #https://github.com/binder-examples/bokeh
 jupyter labextension install @jupyterlab/server-proxy
 jupyter serverextension enable --sys-prefix jupyter_server_proxy
 
 # Install the bokeh server extension so that Bokeh launches at startup
-#mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 # Enable Bokeh extension
-#jupyter serverextension enable --sys-prefix bokehserverextension
+jupyter serverextension enable --sys-prefix bokehserverextension
