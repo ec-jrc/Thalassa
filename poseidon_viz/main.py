@@ -8,7 +8,6 @@ from panels import grid
 from panels import about
 from panels import time_series
 
-
 pn.serve(
     panels={
         "About": lambda: about(data_dir),
@@ -29,5 +28,5 @@ pn.serve(
 #    port=80,
     index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
     show=True,
-#    websocket_origin='localhost',
+    websocket_origin='localhost',
 )
