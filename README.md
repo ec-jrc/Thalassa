@@ -27,6 +27,10 @@ Clone the repo
 
 	You can set one up with conda with 
 	
+	`conda create -n Thalassa pip python=3.8 geos gdal=3.2.1 proj=7
+	conda activate Thalassa`
+	
+	then
 	
 	`python -m venv .venv
 	source .venv/bin/activate
@@ -52,7 +56,7 @@ Clone the repo
 	
 	- or launch it from the terminal 
 
-	`panel serve poseidon_viz/Thalassa.ipynb --allow-websocket-origin=*`
+	  `panel serve poseidon_viz/Thalassa.ipynb --allow-websocket-origin=*`
 
 	Then in your favorite browser visit
 	
