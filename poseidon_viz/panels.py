@@ -16,12 +16,13 @@ try:
     from .utils import load_grid_from_disk
     from .utils import load_elevation_from_disk
     from .utils import get_dataset
+    from .utils import extract_grid
 except:
     from paths import STATIC
     from utils import load_grid_from_disk
     from utils import load_elevation_from_disk
     from utils import get_dataset
-    
+    from utils import extract_grid
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -182,14 +183,11 @@ class AAA:
         return v
 
 
-def elevation_max(data_dir: pathlib.Path):
-    # load data
-    grid_path = data_dir / "grid.npz"
-    elevation_max_path = data_dir / "elevation.max.npz"
-    elevation_path = data_dir / "elevation.nc"
-    x, y, simplices = load_grid_from_disk(grid_path)
-    z = load_elevation_from_disk(elevation_max_path)
-    w = get_dataset(elevation_path)
+def elevation_max(dataset: xr.Dataset):
+    #extract data
+    x, y, simplices = extract_grid(dataset)
+    w = dataset 
+    z = dataset.elev.max(dim='time').values
     # create panel objects
     xyz_points = pd.DataFrame(dict(longitude=x, latitude=y, elevation=z))
     points = hv.Points(xyz_points, kdims=["longitude", "latitude"], vdims="elevation")
@@ -211,12 +209,10 @@ def elevation_max(data_dir: pathlib.Path):
     return pn.Column(header, layout, disclaimer)
 
 
-def elevation(data_dir: pathlib.Path):
-    # load data
-    grid_path = data_dir / "grid.npz"
-    elevation_path = data_dir / "elevation.nc"
-    x, y, simplices = load_grid_from_disk(grid_path)
-    z = get_dataset(elevation_path)
+def elevation(dataset: xr.Dataset):
+    # extract data
+    z = dataset
+    x, y, simplices = extract_grid(dataset) 
     # create panel objects
     xyz_points = pd.DataFrame(dict(longitude=x, latitude=y, elevation=z.elev.isel(time=0).values))
     points = hv.Points(xyz_points, kdims=["longitude", "latitude"], vdims="elevation")
@@ -266,10 +262,10 @@ def video(data_dir: pathlib.Path):
     return pn.Column(header, row, disclaimer)
 
 
-def grid(data_dir: pathlib.Path):
-    # load data
-    grid_path = data_dir / "grid.npz"
-    x, y, simplices = load_grid_from_disk(grid_path)
+def grid(dataset: xr.Dataset):
+    
+    # extract data
+    x, y, simplices = extract_grid(dataset) 
     # create panel objects
     xy_points = pd.DataFrame(dict(longitude=x, latitude=y))
     points = hv.Points(xy_points, kdims=["longitude", "latitude"])
@@ -282,7 +278,13 @@ def grid(data_dir: pathlib.Path):
     layout = tiles * datashaded_trimesh
     header = get_header(title="## Mesh")
     disclaimer = get_disclaimer()
-    return pn.Column(header, layout, disclaimer)
+    text = '''
+      # USAGE
+      Use the toolbox on the right to zoom in/out.
+      '''
+    footer = pn.Row(pn.pane.Markdown(text))
+    
+    return pn.Column(header, layout, footer, disclaimer)
 
 
 def about(data_dir: pathlib.Path):
