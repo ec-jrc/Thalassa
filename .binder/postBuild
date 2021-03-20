@@ -16,10 +16,21 @@ wget -O data/thalassa.png "https://www.dropbox.com/s/nfpivybiyrb3p4g/thalassa.pn
 #mv .binder/jupyter_notebook_config.py $HOME/.jupyter/
 
 #https://github.com/binder-examples/bokeh
-jupyter labextension install @jupyterlab/server-proxy
-jupyter serverextension enable --sys-prefix jupyter_server_proxy
+#jupyter labextension install @jupyterlab/server-proxy
+#jupyter serverextension enable --sys-prefix jupyter_server_proxy
 
 # Install the bokeh server extension so that Bokeh launches at startup
 #mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 # Enable Bokeh extension
 #jupyter serverextension enable --sys-prefix bokehserverextension
+
+
+#https://github.com/holoviz-demos/clifford
+# enable nbserverproxy
+jupyter serverextension enable --sys-prefix nbserverproxy
+# install the panel server extension so that
+# panel launches at startup
+mv panelserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+# enable panel extension
+jupyter serverextension enable --sys-prefix panelserverextension
+

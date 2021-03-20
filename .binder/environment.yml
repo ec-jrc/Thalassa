@@ -9,6 +9,7 @@ dependencies:
   - proj < 8
   - gdal=3.2.1
   - jupyter-server-proxy
+  - nbserverproxy
   - bash_kernel
   - hvplot
   - datashader
