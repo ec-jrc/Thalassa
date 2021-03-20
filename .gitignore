@@ -145,3 +145,4 @@ cython_debug/
 
 #data folder
 data/
+data_/
