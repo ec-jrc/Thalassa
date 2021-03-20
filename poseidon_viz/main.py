@@ -30,7 +30,7 @@ pn.serve(
         "Stations": "Tide guage Time Series",
     },
 #    port=80,
-    index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
+#   index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
     show=True,
     websocket_origin='localhost',
 )
