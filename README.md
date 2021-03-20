@@ -15,7 +15,7 @@ Thalassa is powered by
 
 ## Instalation
 
-* locally
+### locally
 
 Clone the repo
 
@@ -59,7 +59,9 @@ Clone the repo
 	`http://localhost:5006/Thalassa`
 	
 
-Server deployment
+### Server deployment
+
+
 
 ## License
 * The project is released under the EUPL v1.2 license.
