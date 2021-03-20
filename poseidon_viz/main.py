@@ -1,5 +1,6 @@
 import panel as pn
 import paths
+import utils
 data_dir = paths.PACKAGE.parent / 'data'
 from panels import elevation_max
 from panels import elevation
@@ -8,12 +9,15 @@ from panels import grid
 from panels import about
 from panels import time_series
 
+dataset_path = data_dir / "dataset.nc"
+dataset = utils.get_dataset(dataset_path)
+
 pn.serve(
     panels={
         "About": lambda: about(data_dir),
-        "Mesh": lambda: grid(data_dir),
-        "Elevation": lambda: elevation_max(data_dir),
-        "Forecast": lambda: elevation(data_dir),
+        "Mesh": lambda: grid(dataset),
+        "Elevation": lambda: elevation_max(dataset),
+        "Forecast": lambda: elevation(dataset),
         "Animation": lambda: video(data_dir),
         "Stations": lambda: time_series(data_dir)
     },
