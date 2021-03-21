@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "poseidon_viz"
+name = "thalassa"
 version = "0.1.0"
 description = "Visualization of large scale results of hydrodynamic simulations"
 authors = [
@@ -60,7 +60,7 @@ ipython = "^7.20.0"
 jedi = "<0.18"
 
 [tool.poetry.scripts]
-pv = "poseidon_viz.cli:app"
+thalassa = "thalassa.cli:app"
 
 [tool.black]
 line-length = 129

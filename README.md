@@ -80,7 +80,7 @@ wget -O data/thalassa.png  https://static.techrad.eu/thalassa/thalassa.png
 If you used conda or virtualenv, you can launch the Thalassa web server with:
 
 ```
-pv serve --websocket-origin='localhost:9000' --port 9000
+thalassa serve --websocket-origin='localhost:9000' --port 9000
 ```
 
 An image should open on your visit http://localhost:9000

@@ -37,4 +37,4 @@ sudo docker run \
   --name "${container_name}" \
   --publish "${port}":8000 \
   "${image_fqdn}" \
-  pv serve --websocket-origin "*" --port 8000 --no-show
+  thalassa serve --websocket-origin "*" --port 8000 --no-show
