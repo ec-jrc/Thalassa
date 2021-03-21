@@ -11,61 +11,92 @@ Thalassa is powered by
 
 - [Panel](https://panel.holoviz.org/index.html)
 
-
-
 ## Instalation
 
-### locally
+Start by cloning the repository:
 
-Clone the repo
+### Option 1: Use a virtualenv
 
-- option 1: 
+Your system needs to have:
 
-	**Build using poetry and venv**
-	
-	Your system needs to have pip, python>=3.8, geos, gdal=3.2.1 and proj<8. 
+- python>=3.8
+- geos
+- gdal=3.2.1
+- proj `<8`
+- poetry
 
-	You can set one up with conda with 
-	
-	`conda create -n Thalassa pip python=3.8 geos gdal=3.2.1 proj=7
-	conda activate Thalassa`
-	
-	then
-	
-	`python -m venv .venv
-	source .venv/bin/activate
-	poetry install`
+There are multiple ways to satisfy these requirements, e.g. using your distro's package manager,
+compiling from source, etc. An easy way to proceed is to create a conda environment like the
+following:
 
-	execute with 
-	
-	`pv serve --websocket-origin '*'`
-	
-	A webpage will open in your default browser 
-	
-- option 2:
+```
+conda create -n Thalassa pip python=3.8 geos gdal=3.2.1 proj=7 poetry
+```
 
-	**Run using conda**
-	
-	create a new conda environment as
-	
-	`conda env create -f binder/environment.yml`
-	
-	Then
-	
-	- run the poseidon_viz/Thalassa.ipynb on jypyterlab/Notebook.
-	
-	- or launch it from the terminal 
+Afterwards, activate the new conda environment, create a virtualenv and install the dependencies using
+poetry:
 
-	  `panel serve poseidon_viz/Thalassa.ipynb --allow-websocket-origin=*`
+```
+conda activate Thalassa
+python3 -m venv .venv
+source .venv/bin/activate
+poetry install
+```
 
-	Then in your favorite browser visit
-	
-	`http://localhost:5006/Thalassa`
-	
+You are ready to go!
 
-### Server deployment
+### Option 2: Use conda
 
+Install the dependencies in a conda environment with:
 
+```
+conda env create -f binder/environment.yml
+```
+
+### Option3: Use docker
+
+```
+docker/build.sh
+```
+
+This will create a docker image
+
+## Obtaining Data
+
+You will need some data. If you don't have any you can download a sample dataset from here:
+
+```
+wget -O data/animation.mp4 https://static.techrad.eu/thalassa/animation.mp4
+wget -O data/dataset.nc    https://static.techrad.eu/thalassa/dataset.nc
+wget -O data/stations.csv  https://static.techrad.eu/thalassa/stations.csv
+wget -O data/stations.zip  https://static.techrad.eu/thalassa/stations.zip
+wget -O data/thalassa.png  https://static.techrad.eu/thalassa/thalassa.png
+```
+
+## Running Thalassa
+
+### Conda or virtualenv
+
+If you used conda or virtualenv, you can launch the Thalassa web server with:
+
+```
+pv serve --websocket-origin='localhost:9000' --port 9000
+```
+
+An image should open on your visit http://localhost:9000
+
+### docker
+
+If you build the docker image, execute:
+
+```
+docker/run.sh
+```
+
+This will start a webserver listening on port 61112. So visit: http://localhost:61112
+
+**NOTE**: If you want to deploy this on a server, you will probably want to change the
+`websocket-origin` in `docker/run.sh` to something more secure (e.g. to a subdomain).
 
 ## License
 * The project is released under the EUPL v1.2 license.
