@@ -7,7 +7,7 @@ set -xeuo pipefail
 # - Memory: We should keep at least 10G for the host
 # - CPU: Setting the cpu_share with a value lower than 1024 equals to increasing
 #   the niceness of the containers' processes (i.e. less priority)
-memory='10'
+memory='10g'
 cpu_shares=512
 
 port=61112
@@ -37,4 +37,4 @@ sudo docker run \
   --name "${container_name}" \
   --publish "${port}":8000 \
   "${image_fqdn}" \
-  pv serve --websocket-origin 0.0.0.0:"${port}" --port 8000 --no-show
+  pv serve --websocket-origin "*" --port 8000 --no-show

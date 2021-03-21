@@ -33,10 +33,10 @@ RUN set -xeu; \
     echo 'Setting locales: OK';
 
 # Create normal user
-ENV USER_NAME=critechproc \
-    GROUP_NAME=EC_JRC_P_CRITECH \
-    USER_ID=35435 \
-    GROUP_ID=50008
+ENV USER_NAME=thalassa \
+    GROUP_NAME=thalassa \
+    USER_ID=1000 \
+    GROUP_ID=1000
 RUN groupadd --gid "${GROUP_ID}" "${GROUP_NAME}"; \
     useradd -u "${USER_ID}" -g "${GROUP_ID}" -m -s /bin/bash "${USER_NAME}"; \
     echo "user ${USER_NAME} creation: OK";
