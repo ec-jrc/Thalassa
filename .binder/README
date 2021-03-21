@@ -1,7 +1,5 @@
-One needs to mask ../Dockerfile
+One needs to mask ../Dockerfile. That is why we appened a _.
+
+In order to work we need to run a notebook. See postBuild for more info
 
 It builds but it only launches the notebook.
-
-I guess we need a version of cli.py to be in a notebook style.
-
-

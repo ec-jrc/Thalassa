@@ -1,9 +1,6 @@
 #!/bin/bash
 set -xeuo pipefail
 
-
-pip install Gdown
-
 mkdir data
 
 #with dropbox
@@ -16,6 +13,8 @@ mkdir data
 
 
 #from Google Drive using https://kobkrit.com/how-to-directly-download-files-from-dropbox-or-google-drive-using-wget-in-terminal-or-in-google-573168195011
+pip install Gdown
+
 cd data
 
 gdown --id 12RA5YO66t59LbG1O-nFPEyYjAdr2YCd8
@@ -46,7 +45,7 @@ cd ..
 jupyter serverextension enable --sys-prefix nbserverproxy
 # install the panel server extension so that
 # panel launches at startup
-mv panelserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+mv .binder/panelserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 # enable panel extension
 jupyter serverextension enable --sys-prefix panelserverextension
 
