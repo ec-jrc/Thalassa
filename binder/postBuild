@@ -28,14 +28,14 @@ cd ..
 #https://github.com/psychemedia/jupyterserverproxy-openrefine
 #python -m bash_kernel.install
 #mkdir -p $HOME/.jupyter/
-#mv .binder/jupyter_notebook_config.py $HOME/.jupyter/
+#mv binder/jupyter_notebook_config.py $HOME/.jupyter/
 
 #https://github.com/binder-examples/bokeh
 #jupyter labextension install @jupyterlab/server-proxy
 #jupyter serverextension enable --sys-prefix jupyter_server_proxy
 
 # Install the bokeh server extension so that Bokeh launches at startup
-#mv .binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+#mv binder/bokehserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 # Enable Bokeh extension
 #jupyter serverextension enable --sys-prefix bokehserverextension
 
@@ -45,7 +45,7 @@ cd ..
 jupyter serverextension enable --sys-prefix nbserverproxy
 # install the panel server extension so that
 # panel launches at startup
-mv .binder/panelserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
+mv binder/panelserverextension.py ${NB_PYTHON_PREFIX}/lib/python*/site-packages/
 # enable panel extension
 jupyter serverextension enable --sys-prefix panelserverextension
 
