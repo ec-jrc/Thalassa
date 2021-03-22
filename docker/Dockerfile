@@ -33,10 +33,10 @@ RUN set -xeu; \
     echo 'Setting locales: OK';
 
 # Create normal user
-ENV USER_NAME=critechproc \
-    GROUP_NAME=EC_JRC_P_CRITECH \
-    USER_ID=35435 \
-    GROUP_ID=50008
+ENV USER_NAME=thalassa \
+    GROUP_NAME=thalassa \
+    USER_ID=1000 \
+    GROUP_ID=1000
 RUN groupadd --gid "${GROUP_ID}" "${GROUP_NAME}"; \
     useradd -u "${USER_ID}" -g "${GROUP_ID}" -m -s /bin/bash "${USER_NAME}"; \
     echo "user ${USER_NAME} creation: OK";
@@ -116,8 +116,8 @@ RUN python3.8 -mpip install -U --no-cache-dir --no-compile pip setuptools; \
     find / -xdev -name *.pyc -delete; \
     echo 'Requirements installation: OK'
 
-COPY dist/poseidon_viz-0.1.0-py3-none-any.whl  /tmp/
-RUN python3.8 -mpip install -U --no-cache-dir --no-compile /tmp/poseidon_viz-0.1.0-py3-none-any.whl; \
+COPY dist/thalassa-0.1.0-py3-none-any.whl  /tmp/
+RUN python3.8 -mpip install -U --no-cache-dir --no-compile /tmp/thalassa-0.1.0-py3-none-any.whl; \
     find / -xdev -name *.pyc -delete; \
     echo 'Poseidon-viz installation: OK'
 

@@ -197,7 +197,7 @@ def elevation_max(dataset: xr.Dataset):
         rasterize(trimesh, aggregator='mean')
         .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters', tools=["hover"])
     )
-    tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
+    tiles = gv.WMTS('https://b.tile.openstreetmap.org/{Z}/{X}/{Y}.png')
     layout = tiles * datashaded_trimesh
 
     t0 = pd.to_datetime(w.time.values.min()).strftime(format='%Y-%m-%d:%H')
@@ -229,7 +229,7 @@ def elevation(dataset: xr.Dataset):
         .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters', tools=["hover"])
     )
 
-    tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
+    tiles = gv.WMTS('https://b.tile.openstreetmap.org/{Z}/{X}/{Y}.png')
 
     t_widget = pn.widgets.Select()
 
@@ -274,7 +274,7 @@ def grid(dataset: xr.Dataset):
         datashade(trimesh, precompute=True, cmap=['black'])
         .opts(width=1200, height=900) #, tools=["hover"])
     )
-    tiles = gv.WMTS('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png')
+    tiles = gv.WMTS('https://b.tile.openstreetmap.org/{Z}/{X}/{Y}.png')
     layout = tiles * datashaded_trimesh
     header = get_header(title="## Mesh")
     disclaimer = get_disclaimer()

@@ -19,20 +19,21 @@ creation_date=$(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 revision_hash=$(git rev-parse HEAD)
 
 # Create wheel file and export requirements.txt
+poetry export --without-hashes --format requirements.txt --output docker/requirements.txt
 poetry build
-poetry export --without-hashes --format requirements.txt --output requirements.txt
+cp -r ./dist docker/
 
 # Build docker image
-docker build \
+sudo docker build \
   --target base \
   --progress="${progress_mode}" \
   --label org.opencontainers.image.created="${creation_date}" \
   --label org.opencontainers.image.revision="${revision_hash}" \
   -t "${image_name}":runtime \
-  ./
+  ./docker
 
 # Create date tags
 if [ "${create_date_tags}" -eq 1 ]; then
   creation_date_tag=$(date -u +"%Y%m%d")
-  docker tag "${image_name}":runtime "${-mage_fqdn}":runtime-"${creation_date_tag}"
+  sudo docker tag "${image_name}":runtime "${image_fqdn}":runtime-"${creation_date_tag}"
 fi

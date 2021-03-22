@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import pathlib
 import signal
 import shlex
@@ -23,6 +24,10 @@ def create_dir(path: pathlib.Path) -> None:
     except PermissionError:
         typer.echo(f"You don't have sufficient permissions to create the output directory: {path}")
         raise typer.Exit(1)
+
+
+logging.getLogger("numba").setLevel(logging.INFO)
+logging.getLogger("MARKDOWN").setLevel(logging.INFO)
 
 
 app = typer.Typer(help="Visualize pyPoseidon output")
