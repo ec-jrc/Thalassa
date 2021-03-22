@@ -85,6 +85,16 @@ thalassa serve --websocket-origin='localhost:9000' --port 9000
 
 An image should open on your visit http://localhost:9000
 
+### Conda
+
+If you used conda you can also use:
+
+```
+panel serve --show Thalassa.ipynb
+```
+
+it will open in your default browser.
+
 ### docker
 
 If you build the docker image, execute:
