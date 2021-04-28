@@ -5,7 +5,7 @@ This is a developmental prototype for visualizing large scale results of hydrody
 
 Thalassa is powered by
 
-- [pyPoseidon](https://github.com/brey/pyPoseidon)
+- [pyPoseidon](https://github.com/ec-jrc/pyPoseidon)
 
 - [SCHISM](https://github.com/schism-dev/schism)
 
