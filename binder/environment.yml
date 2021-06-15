@@ -19,3 +19,5 @@ dependencies:
   - pandas
   - geoviews
   - typer
+  -pip:
+   - noaa-coops

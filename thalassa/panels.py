@@ -3,11 +3,13 @@ from __future__ import annotations
 import functools
 import pathlib
 import zipfile
+from datetime import datetime
 
 import geoviews as gv
 import holoviews as hv
 import pandas as pd
 import panel as pn
+import noaa_coops as noaa
 
 from holoviews.operation.datashader import datashade, rasterize
 
@@ -195,7 +197,7 @@ def elevation_max(dataset: xr.Dataset):
     opts.defaults(opts.WMTS(width=1200, height=900))
     datashaded_trimesh = (
         rasterize(trimesh, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.min(), z.max()), clabel='meters', tools=["hover"])
+        .opts(colorbar=True, cmap='Viridis', clim=(0, 10), clabel='meters', tools=["hover"])
     )
     tiles = gv.WMTS('https://b.tile.openstreetmap.org/{Z}/{X}/{Y}.png')
     layout = tiles * datashaded_trimesh
@@ -226,7 +228,7 @@ def elevation(dataset: xr.Dataset):
 
     datashaded_trimesh = (
         rasterize(meshes, aggregator='mean')
-        .opts(colorbar=True, cmap='Viridis', clim=(z.elev.values.min(), z.elev.values.max()), clabel='meters', tools=["hover"])
+        .opts(colorbar=True, cmap='Viridis', clim=(-2.0, 2.0), clabel='meters', tools=["hover"])
     )
 
     tiles = gv.WMTS('https://b.tile.openstreetmap.org/{Z}/{X}/{Y}.png')
@@ -294,22 +296,27 @@ def about(data_dir: pathlib.Path):
     return pn.Column(header, layout, disclaimer)
 
 
-def get_station_dataframe(data_dir: pathlib.Path, name: str):
-    csv_path = "STATIONS/sim_{}.csv".format(name)
-    with zipfile.ZipFile(data_dir / "stations.zip") as zip_archive:
-        with zip_archive.open(csv_path) as fd:
-            dfa = pd.read_csv(fd, index_col=[0, 1])
-    df = dfa.loc["l0"]
-    df = df.drop_duplicates()
-    df = df.reset_index()
-    df.columns = ["Time", "Elevation"]
-    df["Elevation"] = df.Elevation.astype(float)
-    df["Time"] = pd.to_datetime(df["Time"])
-    df["Time"] = df.Time.dt.tz_localize("UTC")
+def get_station_dataframe(sid):
+    station=noaa.Station(int(sid))
+    startdate=datetime(2021,6,14,1).strftime('%Y%m%d %H:00')
+    enddate=datetime(2021,6,15).strftime('%Y%m%d %H:00')
+    try:
+        noaa_wl =station.get_data( begin_date=startdate,
+            end_date=enddate, product="water_level",
+            datum="MSL", units="metric", time_zone="gmt",interval='h')
+        df = noaa_wl.iloc[:, 0:1]
+        df = df.drop_duplicates()
+        df = df.reset_index()
+        df.columns = ["Time", "Elevation"]
+        df["Elevation"] = df.Elevation.astype(float)
+        df["Time"] = pd.to_datetime(df["Time"])
+        df["Time"] = df.Time.dt.tz_localize("UTC") 
+    except:
+        print(f"No data at station {sid}")
     return df
 
 
-def select_tg(data_dir, tgs, index):
+def select_tg(tgs, index):
     # https://github.com/holoviz/hvplot/issues/180
     hover = HoverTool(
         tooltips=[("Time", "@Time{%F}"), ("Elevation", "@Elevation")],
@@ -321,7 +328,9 @@ def select_tg(data_dir, tgs, index):
         df = df.hvplot("Time", "Elevation", color="green", width=833, height=250, padding=0.1)
     else:
         name = tgs.data.iloc[index[0]].Name
-        df = get_station_dataframe(data_dir, name)
+        sid = tgs.data.iloc[index[0]].ID
+        print(sid)
+        df = get_station_dataframe(sid)
     dataset = hv.Dataset(df)
     curve = hv.Curve(dataset, kdims=["Time"], vdims=["Elevation"])
     curve = curve.opts(
@@ -334,18 +343,19 @@ def time_series(data_dir: pathlib.Path):
     tiles_widget = pn.widgets.Select(options=gvts.tile_sources, name="Web Map Tile Services")
     widgets = pn.WidgetBox(tiles_widget, margin=5)
     header = get_header(title="## Validation")
-    stations = pd.read_csv(data_dir / "stations.csv", index_col=[0])
+    stations = pd.read_csv(data_dir / "stations_2.csv", index_col=[0])
 
     # https://github.com/holoviz/hvplot/issues/180
-    hover = HoverTool(tooltips=[("Name", "@Name")])
+    #hover = HoverTool(tooltips=[("Name", "@Name")])
+    hover = HoverTool(tooltips=[("ID", "@ID")])
 
     tgs = stations.hvplot.points(
-        x="lon", y="lat", hover_cols=["Name"], geo=True, tools=["tap", hover], selection_line_color="red", s=100, color="orange"
+        x="lon", y="lat", hover_cols=["ID"], geo=True, tools=["tap", hover], selection_line_color="red", s=100, color="orange"
     )
 
     # This is a complete hack, but I can't figure out how to pass extra arguments to
     # `select_tg`. So, we use functools.partial to set the extra arguments on runtime.
-    select_tg_patched = functools.partial(select_tg, data_dir=data_dir, tgs=tgs)
+    select_tg_patched = functools.partial(select_tg, tgs=tgs)
     index_stream = Selection1D(source=tgs, index=[])
     graph = hv.DynamicMap(select_tg_patched, streams=[index_stream])
 

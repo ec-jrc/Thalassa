@@ -28,16 +28,37 @@ def save_grid_to_disk(dataset: xr.Dataset, output: pathlib.Path, target_crs: int
     x, y = convert_lat_lon_to_xy(longitudes, latitudes)
     # We opt to save the grid uncompressed since the benefit from compression is relatively small (~2x)
     # while uncompressing takes significantly more time than loading (especially on SSDs).
-    np.savez(output, x=x, y=y, simplices=dataset.SCHISM_hgrid_face_nodes.values)
+    elements=dataset.SCHISM_hgrid_face_nodes.values-1
+    tris = []
+    for ele in elements:
+        ele=ele[~np.isnan(ele)]
+        if len(ele) == 3:
+            tris.append([ele[0], ele[1], ele[2]])
+        elif len(ele) == 4:
+            tris.append([ele[0], ele[1], ele[3]])
+            tris.append([ele[1], ele[2], ele[3]])
+
+    #np.savez(output, x=x, y=y, simplices=dataset.SCHISM_hgrid_face_nodes.values)
+    np.savez(output, x=x, y=y, simplices=np.array(tris).astype(int))
 
 def extract_grid(dataset: xr.Dataset, target_crs: int = 3857) -> None:
     """ Save the definition of the grid on disk after reprojecting to `EPSG:3857` """
     longitudes=dataset.SCHISM_hgrid_node_x.values
     latitudes=dataset.SCHISM_hgrid_node_y.values
     x, y = convert_lat_lon_to_xy(longitudes, latitudes)
+    elements=dataset.SCHISM_hgrid_face_nodes.values-1
+    tris = []
+    for ele in elements:
+        ele=ele[~np.isnan(ele)]
+        if len(ele) == 3:
+            tris.append([ele[0], ele[1], ele[2]])
+        elif len(ele) == 4:
+            tris.append([ele[0], ele[1], ele[3]])
+            tris.append([ele[1], ele[2], ele[3]])
     # We opt to save the grid uncompressed since the benefit from compression is relatively small (~2x)
     # while uncompressing takes significantly more time than loading (especially on SSDs).
-    return x, y, dataset.SCHISM_hgrid_face_nodes.values
+    #return x, y, dataset.SCHISM_hgrid_face_nodes.values-1
+    return x, y, np.array(tris).astype(int)
 
 
 def save_elevation_to_disk(dataset: xr.Dataset, output: pathlib.Path) -> None:

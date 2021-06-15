@@ -72,6 +72,14 @@ wget -O data/stations.csv  https://static.techrad.eu/thalassa/stations.csv
 wget -O data/stations.zip  https://static.techrad.eu/thalassa/stations.zip
 wget -O data/thalassa.png  https://static.techrad.eu/thalassa/thalassa.png
 ```
+06/15/2021, Linlin Cui
+1 . install noaa coops api
+   pip install noaa-coops
+
+2. Added sample data from ICOGS3D 
+   wget -O data/dataset.nc http://ccrm.vims.edu/yinglong/Cui/Thalassa/dataset.nc
+   wget -O data/stations_2.csv http://ccrm.vims.edu/yinglong/Cui/Thalassa/stations_2.csv
+   wget -O data/thalassa.png http://ccrm.vims.edu/yinglong/Cui/Thalassa/thalassa.png
 
 ## Running Thalassa
 
