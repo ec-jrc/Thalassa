@@ -6,8 +6,8 @@ set -xeuo pipefail
 export DOCKER_BUILDKIT=1
 
 registry_url='docker.io'
-registry_namespace='pmav99'
-image_name='thalassa_panel'
+registry_namespace='yosoyjay'
+image_name='thalassa'
 image_fqdn="${registry_url}"/"${registry_namespace}"/"${image_name}"
 
 # Control docker build
