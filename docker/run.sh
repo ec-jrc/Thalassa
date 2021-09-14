@@ -11,8 +11,8 @@ memory='10g'
 cpu_shares=512
 
 port=61112
-image_fqdn='thalassa_panel:runtime'
-container_name='thalassa_panel'
+image_fqdn='docker.io/yosoyjay/thalassa:latest'
+container_name='thalassa'
 
 data_directory="$(pwd)/data"
 
