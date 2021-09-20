@@ -1,12 +1,7 @@
-#!/usr/bin/env bash
-
 set -xeuo pipefail
 
-# Use Buildkit: https://docs.docker.com/develop/develop-images/build_enhancements/
-export DOCKER_BUILDKIT=1
-
 registry_url='docker.io'
-registry_namespace='yosoyjay'
+registry_namespace='smnoaa'
 image_name='thalassa'
 image_fqdn="${registry_url}"/"${registry_namespace}"/"${image_name}"
 
@@ -19,18 +14,14 @@ creation_date=$(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 revision_hash=$(git rev-parse HEAD)
 
 # Create wheel file and export requirements.txt
-poetry export --without-hashes --format requirements.txt --output docker/requirements.txt
-poetry build
-cp -r ./dist docker/
 
 # Build docker image
 sudo docker build \
-  --target base \
-  --progress="${progress_mode}" \
   --label org.opencontainers.image.created="${creation_date}" \
   --label org.opencontainers.image.revision="${revision_hash}" \
   -t "${image_name}":runtime \
-  ./docker
+  -f ./docker/Dockerfile \
+  .
 
 # Create date tags
 if [ "${create_date_tags}" -eq 1 ]; then

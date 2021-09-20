@@ -1,23 +1,36 @@
 name: Thalassa
 channels:
+  - pyviz
   - conda-forge
   - defaults
 dependencies:
-  - pip
-  - geos
   - python=3.8
-  - proj < 8
-  - gdal=3.2.1
-  - jupyter-server-proxy
-  - nbserverproxy
-  - bash_kernel
+  - pip=21.2.4
+  - bokeh=2.3.3
+  - datashader=0.13.0
+  - fiona=1.8.20
+  - gdal=3.2.2
+  - geopandas=0.9.0
+  - geos=3.9.1
+  - geotiff=1.6.0
+  - geoviews=1.9.1
+  - geoviews-core=1.9.1
+  - holoviews=1.14.6
   - hvplot
-  - datashader
-  - matplotlib
-  - xarray
-  - zarr
-  - pandas
-  - geoviews
-  - typer
+  - matplotlib=3.4.3
+  - panel
+  - pillow=8.3.1
+  - proj=8.0.1
+  - pyproj=3.2.1
+  - scipy=1.7.1
+  - setuptools=58.0.4
+  - shapely=1.7.1
+  - tornado=6.1
+  - typer=0.4.0
+  - bash_kernel=0.7.2
+  - xarray=0.19.0
+  - pandas=1.3.3
+  - zarr=2.10.0
+  - cartopy
   - pip:
     - noaa-coops

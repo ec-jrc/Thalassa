@@ -11,7 +11,7 @@ memory='10g'
 cpu_shares=512
 
 port=61112
-image_fqdn='docker.io/yosoyjay/thalassa:latest'
+image_fqdn='thalassa:runtime'
 container_name='thalassa'
 
 data_directory="$(pwd)/data"
@@ -36,5 +36,4 @@ sudo docker run \
   --mount type=bind,source="${data_directory}",target=/data,readonly \
   --name "${container_name}" \
   --publish "${port}":8000 \
-  "${image_fqdn}" \
-  thalassa serve --websocket-origin "*" --port 8000 --no-show
+  "${image_fqdn}" 

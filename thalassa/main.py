@@ -15,22 +15,20 @@ dataset = utils.get_dataset(dataset_path)
 pn.serve(
     panels={
         "About": lambda: about(data_dir),
-        "Mesh": lambda: grid(dataset),
-        "Elevation": lambda: elevation_max(dataset),
-        "Forecast": lambda: elevation(dataset),
-        "Animation": lambda: video(data_dir),
+        "Mesh": lambda: grid(dataset),#data_dir),
+        "MaxElevation": lambda: elevation_max(dataset),#data_dir),
+        "Forecast": lambda: elevation(dataset),#data_dir),
         "Stations": lambda: time_series(data_dir)
     },
     title={
         "About": "General Info",
         "Mesh": "Display grid",
-        "Elevation": "Interactive map with the maximum elevation in the next 72hours",
+        "MaxElevation": "Interactive map with the maximum elevation in the next 72hours",
         "Forecast": "Interactive maps with hourly elevation for the next 72hours",
-        "Animation": "Video with the evolution of elevation data",
         "Stations": "Tide guage Time Series",
     },
-#    port=80,
-#   index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
+#    port=5006,
+    index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
     show=True,
-    websocket_origin='localhost',
+#    websocket_origin='localhost',
 )
