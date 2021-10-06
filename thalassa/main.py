@@ -1,36 +1,21 @@
-import panel as pn
-import paths
-import utils
-data_dir = paths.PACKAGE.parent / 'data'
-from panels import elevation_max
-from panels import elevation
-from panels import video
-from panels import grid
-from panels import about
-from panels import time_series
+import logging.config
 
-dataset_path = data_dir / "dataset.nc"
-dataset = utils.get_dataset(dataset_path)
+import panel as pn  # type: ignore
+from ruyaml import YAML
 
-pn.serve(
-    panels={
-        "About": lambda: about(data_dir),
-        "Mesh": lambda: grid(dataset),
-        "Elevation": lambda: elevation_max(dataset),
-        "Forecast": lambda: elevation(dataset),
-        "Animation": lambda: video(data_dir),
-        "Stations": lambda: time_series(data_dir)
-    },
-    title={
-        "About": "General Info",
-        "Mesh": "Display grid",
-        "Elevation": "Interactive map with the maximum elevation in the next 72hours",
-        "Forecast": "Interactive maps with hourly elevation for the next 72hours",
-        "Animation": "Video with the evolution of elevation data",
-        "Stations": "Tide guage Time Series",
-    },
-#    port=80,
-#   index=(paths.TEMPLATES / "index.html").resolve().as_posix(),
-    show=True,
-    websocket_origin='localhost',
-)
+from thalassa.web_ui import Thalassa
+
+# load configuration
+yaml = YAML(typ="safe", pure=True)
+
+with open("config.yml", "rb") as fd:
+    config = yaml.load(fd.read())
+
+# configure logging
+logging.config.dictConfig(config["logging"])
+
+# Create the panel deployable app
+# https://panel.holoviz.org/user_guide/Deploy_and_Export.html#launching-a-server-on-the-commandline
+thalassa = Thalassa(name="Thalassa")
+layout = pn.Row(thalassa.param, thalassa.view)
+layout.servable()
