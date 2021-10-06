@@ -1,61 +1,61 @@
 from __future__ import annotations
 
+import contextlib
+import importlib
+import logging
+import os
 import pathlib
+import sys
 
-from typing import Tuple
-
-import numpy as np
-import pyproj
 import xarray as xr
 
-
-def get_dataset(path: pathlib.Path) -> xr.Dataset:
-    dataset = xr.open_dataset(path)
-    return dataset
+logger = logging.getLogger(__name__)
 
 
-def convert_lat_lon_to_xy(longitudes: np.array, latitudes: np.array, target_crs: int = 3857) -> Tuple[np.array, np.array]:
-    """ Convert `(latitude, longitude)` arrays to the `target_crs` """
-    transformer = pyproj.Transformer.from_crs(crs_from=4326, crs_to=target_crs, always_xy=True)
-    x_points, y_points = transformer.transform(longitudes, latitudes, errcheck=True)
-    return x_points, y_points
+def open_dataset(path: str | pathlib.Path, load: bool = False) -> xr.Dataset:
+    path = pathlib.Path(path)
+    if path.suffix == ".nc":
+        ds = xr.open_dataset(path, mask_and_scale=True)
+    elif path.suffix in (".zarr", ".zip") or path.is_dir():
+        ds = xr.open_dataset(path, mask_and_scale=True, engine="zarr")
+    # TODO: extend with GeoTiff, Grib etc
+    else:
+        raise ValueError(f"Don't know how to handle this: {path}")
+    if load:
+        # load dataset to memory
+        ds.load()
+    return ds
 
 
-def save_grid_to_disk(dataset: xr.Dataset, output: pathlib.Path, target_crs: int = 3857) -> None:
-    """ Save the definition of the grid on disk after reprojecting to `EPSG:3857` """
-    longitudes=dataset.SCHISM_hgrid_node_x.values
-    latitudes=dataset.SCHISM_hgrid_node_y.values
-    x, y = convert_lat_lon_to_xy(longitudes, latitudes)
-    # We opt to save the grid uncompressed since the benefit from compression is relatively small (~2x)
-    # while uncompressing takes significantly more time than loading (especially on SSDs).
-    np.savez(output, x=x, y=y, simplices=dataset.SCHISM_hgrid_face_nodes.values)
+def reload(module_name: str) -> None:
+    """
+    Reload source code when working interactively, e.g. on jupyterlab
 
-def extract_grid(dataset: xr.Dataset, target_crs: int = 3857) -> None:
-    """ Save the definition of the grid on disk after reprojecting to `EPSG:3857` """
-    longitudes=dataset.SCHISM_hgrid_node_x.values
-    latitudes=dataset.SCHISM_hgrid_node_y.values
-    x, y = convert_lat_lon_to_xy(longitudes, latitudes)
-    # We opt to save the grid uncompressed since the benefit from compression is relatively small (~2x)
-    # while uncompressing takes significantly more time than loading (especially on SSDs).
-    return x, y, dataset.SCHISM_hgrid_face_nodes.values
+    Source: https://stackoverflow.com/questions/28101895/
+    """
+    # In order to avoid having ipython as a hard dependency we need to inline the import statement
+    from IPython.lib import deepreload  # type: ignore  # pylint: disable=import-outside-toplevel
 
+    # Get a handle of the module object
+    module = importlib.import_module(module_name)
 
-def save_elevation_to_disk(dataset: xr.Dataset, output: pathlib.Path) -> None:
-    """ Save the elevation data to disk """
-    np.savez(output, elevation=dataset.elev.values)
-    np.savez(output.parent / "elevation.max.npz", elevation=dataset.elev.max("time").values)
+    # sys.modules contains all the modules that have been imported so far.
+    # Reloading all the modules takes too long.
+    # Therefore let's create a list of modules that we should exclude from the reload procedure
+    to_be_excluded = {key for (key, value) in sys.modules.items() if module_name not in key}
 
-
-def load_grid_from_disk(grid_path: pathlib.Path) -> Tuple[np.array, np.array, np.array]:
-    """ Read the definition of the grid from disk """
-    with np.load(grid_path) as npz:
-        x = npz["x"]
-        y = npz["y"]
-        simplices = npz["simplices"]
-    return x, y, simplices
+    # deepreload uses print(). Let's disable it with a context manager
+    # https://stackoverflow.com/a/46129367/592289
+    with open(os.devnull, "w", encoding="utf-8") as fd, contextlib.redirect_stdout(fd):
+        # OK, now let's reload!
+        deepreload.reload(module, exclude=to_be_excluded)
 
 
-def load_elevation_from_disk(grid_path: pathlib.Path) -> np.array:
-    with np.load(grid_path) as npz:
-        elevation = npz["elevation"]
-    return elevation
+def can_be_opened_by_xarray(path):
+    try:
+        open_dataset(path)
+    except ValueError:
+        logger.debug("path cannot be opened by xarray: %s", path)
+        return False
+    else:
+        return True

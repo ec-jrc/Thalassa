@@ -145,4 +145,7 @@ cython_debug/
 
 #data folder
 data/
+data.bak/
 data_/
+
+.config_jupyter/

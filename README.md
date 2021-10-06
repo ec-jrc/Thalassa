@@ -1,112 +1,85 @@
 Large Scale Sea level visualizations of unstructured mesh data
 ===============================================================
 
-This is a developmental prototype for visualizing large scale results of hydrodynamic simulations.
-
-Thalassa is powered by
-
-- [pyPoseidon](https://github.com/ec-jrc/pyPoseidon)
-
-- [SCHISM](https://github.com/schism-dev/schism)
-
-- [Panel](https://panel.holoviz.org/index.html)
-
-## Instalation
-
-Start by cloning the repository:
-
-### Option 1: Use a virtualenv
-
-Your system needs to have:
-
-- python>=3.8
-- geos
-- gdal=3.2.1
-- proj `<8`
-- poetry
-
-There are multiple ways to satisfy these requirements, e.g. using your distro's package manager,
-compiling from source, etc. An easy way to proceed is to create a conda environment like the
-following:
-
-```
-conda create -n Thalassa pip python=3.8 geos gdal=3.2.1 proj=7 poetry
-```
-
-Afterwards, activate the new conda environment, create a virtualenv and install the dependencies using
-poetry:
-
-```
-conda activate Thalassa
-python3 -m venv .venv
-source .venv/bin/activate
-poetry install
-```
-
-You are ready to go!
-
-### Option 2: Use conda
-
-Install the dependencies in a conda environment with:
-
-```
-conda env create -f binder/environment.yml
-```
-
-### Option3: Use docker
-
-```
-docker/build.sh
-```
-
-This will create a docker image
+Thalassa is a library/application for visualizing large scale results of hydrodynamic simulations.
 
 ## Obtaining Data
 
-You will need some data. If you don't have any you can download a sample dataset from here:
+You will need some data to visualize. If you don't have any you can download a sample dataset
+created with [pyposeidon](https://github.com/ec-jrc/pyPoseidon/):
 
 ```
-wget -O data/animation.mp4 https://static.techrad.eu/thalassa/animation.mp4
-wget -O data/dataset.nc    https://static.techrad.eu/thalassa/dataset.nc
-wget -O data/stations.csv  https://static.techrad.eu/thalassa/stations.csv
-wget -O data/stations.zip  https://static.techrad.eu/thalassa/stations.zip
-wget -O data/thalassa.png  https://static.techrad.eu/thalassa/thalassa.png
+mkdir ./data
+wget -O data/dataset.nc https://static.techrad.eu/thalassa/dataset.nc
 ```
 
-## Running Thalassa
+## Deploying on a server
 
-### Conda or virtualenv
+1. Install the binary dependencies:
 
-If you used conda or virtualenv, you can launch the Thalassa web server with:
+- `python 3.9`
+- `proj < 8`
 
-```
-thalassa serve --websocket-origin='localhost:9000' --port 9000
-```
-
-An image should open on your visit http://localhost:9000
-
-### Conda
-
-If you used conda you can also use:
+2. Install the python dependencies with
 
 ```
-panel serve --show Thalassa.ipynb
+pip install -r requirements/requirements.txt
 ```
 
-it will open in your default browser.
-
-### docker
-
-If you build the docker image, execute:
+3. Run the panel server with:
 
 ```
-docker/run.sh
+panel serve ./run.py
 ```
 
-This will start a webserver listening on port 61112. So visit: http://localhost:61112
+For the record, `panel serve` is a thin wrapper around the [bokeh
+server](https://docs.bokeh.org/en/latest/docs/user_guide/server.html#).  It provides lots of
+command line options which can useful in various deployments scenarios.  Of particular interest
+might be `--num-procs` which spawns multiple workers and `--allow-websocket-origin`. Make sure to
+check the docs:
 
-**NOTE**: If you want to deploy this on a server, you will probably want to change the
-`websocket-origin` in `docker/run.sh` to something more secure (e.g. to a subdomain).
+- https://panel.holoviz.org/user_guide/Deploy_and_Export.html#launching-a-server-on-the-commandline
+- https://docs.bokeh.org/en/latest/docs/user_guide/server.html#basic-reverse-proxy-setup
+- `panel serve --help`
+
+## Developing
+
+### Prerequisites
+
+For managing dependencies we use poetry.
+
+```
+pipx install poetry
+```
+
+### Install dependencies
+
+Just run:
+
+```
+poetry install
+```
+
+and please make sure to also install the [pre-commit](https://pre-commit.com/) hooks:
+
+```
+pre-commit install
+```
+
+### Running Thalassa
+
+#### As a web application
+
+It should be as simple as:
+
+```
+panel serve ./thalassa --autoreload
+```
+
+#### Inside jupyterlab
+
+Open the `Thalassa.ipynb` in jupyterlab
 
 ## License
-* The project is released under the EUPL v1.2 license.
+
+The project is released under the EUPL v1.2 license.

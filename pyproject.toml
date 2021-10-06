@@ -4,14 +4,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "thalassa"
-version = "0.1.0"
+version = "0.2.0"
 description = "Visualization of large scale results of hydrodynamic simulations"
 authors = [
   "Panos Mavrogiorgos <pmav99@gmail.com>",
   "George Breyiannis <George.BREYIANNIS@ec.europa.eu>",
 ]
 readme = "README.md"
-homepage = "https://github.com/brey/Thalassa"
+homepage = "https://github.com/ec-jrc/Thalassa"
 keywords = [
     "Hydrodynamic",
     "Sea",
@@ -35,33 +35,38 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization",
 ]
 
-
 [tool.poetry.dependencies]
-python = "^3.8"
-pyproj = "^3.0.0"
-holoviews = "^1.14.0"
-numpy = "^1.19.4"
-pandas = "^1.1.5"
-bokeh = "^2.2.3"
-panel = "^0.10.2"
-typer = "^0.3.2"
-xarray = "^0.16.2"
-netCDF4 = "^1.5.5"
-geoviews = "^1.8.1"
-scipy = "^1.5.4"
-datashader = "^0.11.1"
-matplotlib = "^3.3.3"
-llvmlite = "<=0.34"
-hvplot = "^0.7.0"
+python = ">=3.8, <3.11"
+pyproj = "^3.0"
+holoviews = "^1.14"
+numpy = "^1.20"
+pandas = "^1.1"
+bokeh = "^2.2"
+panel = "^0.12"
+xarray = "^0.19"
+netCDF4 = "^1.5"
+datashader = "^0.13"
+ruyaml = "^0.20.0"
+geoviews = "^1.9.2"
+Cartopy = "<0.20"  # due to https://github.com/holoviz/geoviews/issues/529
+Shapely = "<1.8"
 
 [tool.poetry.dev-dependencies]
-black = "^20.8b1"
-ipython = "^7.20.0"
-jedi = "<0.18"
-
-[tool.poetry.scripts]
-thalassa = "thalassa.cli:app"
+black = "^21.11b1"
+jupyterlab = "^3.1"
+nodeenv = "^1.6.0"
+pyviz-comms = "^2.1"
+mypy = "0.910"
+prospector = "^1.5"
+pre-commit = "^2.15.0"
+pyinstrument = "^4.0.4"
 
 [tool.black]
-line-length = 129
+line-length = 109
 target-version = ['py38']
+
+[tool.mypy]
+show_error_codes = true
+ignore_missing_imports = true
+implicit_reexport = true
+strict = true

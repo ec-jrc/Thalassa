@@ -1,5 +1,0 @@
-One needs to mask ../Dockerfile. That is why we appened a _.
-
-In order to work we need to run a notebook. See postBuild for more info
-
-It builds but it only launches the notebook.
