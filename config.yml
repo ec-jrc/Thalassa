@@ -1,0 +1,49 @@
+---
+
+logging:
+  version: 1
+  disable_existing_loggers: true
+  formatters:
+    brief:
+      format: '%(levelname)-8s; %(name)-35s; %(message)s'
+      datefmt: "%I:%M:%S"
+    standard:
+      format: '%(asctime)s; %(levelname)-8s; %(name)-35s; %(funcName)-20s;%(lineno)4d: %(message)s'
+      datefmt: "%I:%M:%S"
+    multi_process:
+      class: 'logging.Formatter'
+      format: '%(asctime)s; %(levelname)-8s; [%(thread;)s]; %(name)-35s; %(funcName)-20s;%(lineno)-4d: %(message)s'
+    multi_thread:
+      class: 'logging.Formatter'
+      format: '%(asctime)s; %(levelname)-8s; [%(process)d]; %(name)-35s; %(funcName)-20s;%(lineno)-4d: %(message)s'
+    verbose:
+      class: 'logging.Formatter'
+      format: '%(asctime)s; %(levelname)-8s; [%(process)d - %(thread)s]; %(name)-35s; %(funcName)-20s;%(lineno)4d: %(message)s'
+    multi_line:
+      class: 'logging.Formatter'
+      format: 'Level: %(levelname)s\nTime: %(asctime)s\nProcess: %(process)d\nThread: %(thread)s\nLogger: %(name)s\nPath: %(module)s:%(lineno)d\nFunction :%(funcName)s\nMessage: %(message)s\n'
+  handlers:
+    console:
+      level: 'DEBUG'
+      class: 'logging.StreamHandler'
+      formatter: 'verbose'
+      stream : 'ext://sys.stdout'
+    file_handler:
+      level: 'INFO'
+      class: 'logging.handlers.WatchedFileHandler'
+      formatter: 'verbose'
+      filename: '/tmp/thalassa.log'
+      mode: 'a'
+      encoding: 'utf-8'
+  loggers:
+    thalassa:
+      level: 'DEBUG'
+      propagate: false
+      handlers:
+        - 'console'
+    requests:
+      level: 'WARNING'
+  root:
+    level: 'INFO'
+    handlers:
+      - 'console'
