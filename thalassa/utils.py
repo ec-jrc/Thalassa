@@ -12,7 +12,7 @@ import xarray as xr
 logger = logging.getLogger(__name__)
 
 
-def open_dataset(path: str | pathlib.Path) -> xr.Dataset:
+def open_dataset(path: str | pathlib.Path, load: bool = False) -> xr.Dataset:
     path = pathlib.Path(path)
     if path.suffix == ".nc":
         ds = xr.open_dataset(path, mask_and_scale=True)
@@ -21,6 +21,9 @@ def open_dataset(path: str | pathlib.Path) -> xr.Dataset:
     # TODO: extend with GeoTiff, Grib etc
     else:
         raise ValueError(f"Don't know how to handle this: {path}")
+    if load:
+        # load dataset to memory
+        ds.load()
     return ds
 
 

@@ -9,6 +9,7 @@ from typing import Any
 import holoviews as hv  # type: ignore
 import panel as pn  # type: ignore
 import param  # type: ignore
+from holoviews import opts as hvopts
 
 from . import utils
 from . import visuals
@@ -23,6 +24,11 @@ DATA_DIR_GLOB = DATA_DIR + os.path.sep + "*"
 ERROR = {"border": "4px solid red"}
 INFO = {"border": "2px solid blue"}
 
+# Set some defaults for the visualization of the graphs
+hvopts.defaults(
+    hvopts.Image(width=800, height=400, show_title=True, tools=["hover"]),  # pylint: disable=no-member
+    hvopts.Layout(toolbar="right"),  # pylint: disable=no-member
+)
 
 # Help functions that log them on stdout AND render them on the browser
 # Callbacks should return these functions. E.g:
@@ -33,16 +39,20 @@ INFO = {"border": "2px solid blue"}
 #          except Exception:
 #              return error("Foo failed", is_exception=True)
 #
-def info(msg: str):
+
+
+def info(msg: str) -> pn.pane.Markdown:
     logger.info(msg)
     return pn.pane.Markdown(msg, style=INFO)
 
 
-def error(msg: str, is_exception=False):
-    if is_exception:
-        logger.exception(msg)
-    else:
-        logger.error(msg)
+def error(msg: str) -> pn.pane.Markdown:
+    logger.error(msg)
+    return pn.pane.Markdown(msg, style=ERROR)
+
+
+def exception(msg: str) -> pn.pane.Markdown:
+    logger.exception(msg)
     return pn.pane.Markdown(msg, style=ERROR)
 
 
@@ -64,10 +74,13 @@ class Thalassa(param.Parameterized):
     elevation_var: str = param.ObjectSelector(objects=[""])
     simplices_var: str = param.ObjectSelector(objects=[""])
     time_var: str = param.ObjectSelector(objects=[""])
-    relative_colorbar: str = param.Boolean(True)
+    # ll_coord: float = param.XYCoordinates()
+    # ur_coord: float = param.XYCoordinates()
+    relative_colorbar: bool = param.Boolean(True)
+    show_wireframe: bool = param.Boolean(False)
     render: Any = param.Event(default=False)
 
-    def _check_sanity(self) -> str | None:
+    def _check_sanity(self) -> str:
         if not pathlib.Path(DATA_DIR).exists():
             return "## The DATA_DIR does not exist. Create it and restart the server"
         if not self.param["source_file"].objects:
@@ -75,7 +88,7 @@ class Thalassa(param.Parameterized):
                 "## The DATA_DIR does not contain any files that can be opened by xarray. "
                 "Populate it and restart the server."
             )
-        return None
+        return ""
 
     @param.depends("source_file", watch=True)
     def _update_source_file(self) -> None:
@@ -109,13 +122,7 @@ class Thalassa(param.Parameterized):
     def _toggle_elevation_colorbar(self):
         raise NotImplementedError("Toggle absolute/relative colormap")
 
-    @param.depends("render", watch=False)
-    def view(self) -> hv.Layout | None:
-        """
-        Callback that renders the right column of the UI (i.e. the graphs)
-
-        Gets called the first time the UI gets rendered and every time you click on the "Render" button.
-        """
+    def _view(self) -> pn.Column:
         # sanity check
         sanity_error = self._check_sanity()
         if sanity_error:
@@ -124,7 +131,10 @@ class Thalassa(param.Parameterized):
         # This is a hack. I (pmav99) don't know how to properly fix this using `param.Selectors`.
         # When the UI gets rendered on the browser for the first time the `source_file` combobox
         # displays a default value (the first suitable file in the `DATA_DIR` directory), but the
-        # `source_file` object value is still `None`. In order to populate the `source_file` object
+        # `source_file` object value is still `None`. The problem is that if there is just a single
+        # suitable file in `DATA_DIR` then even when you select the file, the object value does not
+        # change and the `_update_source_file()` callback does not get called....
+        # Therefore, in order to populate the `source_file` object
         # with the proper path, we should explicitly set the value of the object.
         if self.source_file is None:
             self.source_file = self.param["source_file"].objects[0]
@@ -137,21 +147,48 @@ class Thalassa(param.Parameterized):
         logger.debug("Using simplices_var: %s", self.simplices_var)
         logger.debug("Using time_var: %s", self.time_var)
 
-        # open dataset and create the trimesh object
-        ds = utils.open_dataset(self.source_file)
-        try:
-            trimesh = visuals.get_trimesh(
-                ds=ds,
-                longitude_var=self.longitude_var,
-                latitude_var=self.latitude_var,
-                elevation_var=self.elevation_var,
-                simplices_var=self.simplices_var,
-                time_var=self.time_var,
-            )
-        except ValueError:
-            msg = f"Failed to create trimesh object: {self.source_file}"
-            return error(msg, is_exception=True)
+        logger.debug("Open dataset")
+        ds = pn.state.as_cached(
+            key=self.source_file,
+            fn=utils.open_dataset,
+            path=self.source_file,
+            load=True,
+        )
 
-        # create the holoviews layout
-        layout = visuals.get_wireframe_and_max_elevation(trimesh=trimesh)
-        return layout
+        logger.debug("Create trimesh")
+        trimesh = visuals.get_trimesh(
+            ds=ds,
+            longitude_var=self.longitude_var,
+            latitude_var=self.latitude_var,
+            elevation_var=self.elevation_var,
+            simplices_var=self.simplices_var,
+            time_var=self.time_var,
+        )
+
+        # Render main plot
+        output = visuals.get_max_elevation(trimesh)
+
+        # Render additional plots
+        if self.show_wireframe:
+            output += visuals.get_wireframe(trimesh)
+
+        # Ensure that additional plots are displayed in a single column
+        if isinstance(output, hv.Layout):
+            output = output.cols(1)
+
+        return pn.Column(output)
+
+    @param.depends("render", watch=False)
+    def view(self) -> hv.Layout:
+        """
+        Callback that renders the right column of the UI (i.e. the graphs)
+
+        Gets called the first time the UI gets rendered and every time you click on the "Render" button.
+        """
+        # The param callbacks are silencing all exceptions...
+        # This makes it really hard to debug what went wrong.
+        # That's why we wrap the actual callback in a try/except clause
+        try:
+            return self._view()
+        except Exception:  # pylint: disable=broad-except
+            return exception("Something went wrong")

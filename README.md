@@ -9,19 +9,24 @@ You will need some data to visualize. If you don't have any you can download a s
 created with [pyposeidon](https://github.com/ec-jrc/pyPoseidon/):
 
 ```
-mkdir data
-wget -O data/dataset.nc    https://static.techrad.eu/thalassa/dataset.nc
+mkdir ./data
+wget -O data/dataset.nc https://static.techrad.eu/thalassa/dataset.nc
 ```
 
 ## Deploying on a server
 
-1. Install the dependencies with
+1. Install the binary dependencies:
+
+- `python 3.9`
+- `proj < 8`
+
+2. Install the python dependencies with
 
 ```
 pip install -r requirements/requirements.txt
 ```
 
-2. Run the panel server with:
+3. Run the panel server with:
 
 ```
 panel serve ./thalassa

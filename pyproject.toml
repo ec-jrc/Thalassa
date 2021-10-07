@@ -45,9 +45,10 @@ bokeh = "^2.2"
 panel = "^0.12"
 xarray = "^0.19"
 netCDF4 = "^1.5"
-geoviews = "^1.8"
 datashader = "^0.13"
 ruyaml = "^0.20.0"
+geoviews = "^1.9.2"
+Cartopy = "<0.20"  # due to https://github.com/holoviz/geoviews/issues/529
 
 [tool.poetry.group.dev.dependencies]
 black = "^21.9b0"
@@ -58,11 +59,13 @@ mypy = "^0.910"
 prospector = "^1.5"
 pre-commit = "^2.15.0"
 
+
 [tool.poetry.group.vim]
 optional = true
 
 [tool.poetry.group.vim.dependencies]
 jupyterlab-vim = "^0.14"
+
 
 [tool.black]
 line-length = 109
