@@ -5,7 +5,7 @@ import logging.config
 import holoviews as hv
 import panel as pn
 from holoviews import opts as hvopts
-from ruyaml import YAML
+from ruamel.yaml import YAML
 
 import thalassa
 
