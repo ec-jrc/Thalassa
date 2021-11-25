@@ -73,7 +73,7 @@ pre-commit install
 It should be as simple as:
 
 ```
-panel serve ./thalassa --autoreload
+panel serve ./run.py --autoreload
 ```
 
 #### Inside jupyterlab
