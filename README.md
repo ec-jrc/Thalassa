@@ -3,6 +3,12 @@ Large Scale Sea level visualizations of unstructured mesh data
 
 Thalassa is a library/application for visualizing large scale results of hydrodynamic simulations.
 
+
+
+https://user-images.githubusercontent.com/411196/146007390-88e8cc59-9ae9-4a15-83fd-f7f1f2d724c2.mp4
+
+
+
 ## Obtaining Data
 
 You will need some data to visualize. If you don't have any you can download a sample dataset
