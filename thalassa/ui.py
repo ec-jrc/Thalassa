@@ -32,7 +32,6 @@ def error(msg: str) -> pn.Column:
     logger.error(msg)
     return pn.pane.Markdown(msg, style=ERROR)
 
-
 class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     """
     This UI is supposed to be used with a Bootstrap-like template supporting
@@ -66,6 +65,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # UI components
         self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
         self._sidebar = pn.Column()
+        self._timeseries=pn.Column()
 
         ## Define widgets  # noqa
         self.dataset_file = pn.widgets.Select(
@@ -81,6 +81,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.timestamp = pn.widgets.Select(name="Timestamp")
         self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox")
         self.show_grid = pn.widgets.Checkbox(name="Show Grid")
+        self.show_timeseries = pn.widgets.Checkbox(name="Show Time Series")
         # stations
         self.stations_file = pn.widgets.Select(name="Stations file")
         self.stations = pn.widgets.CrossSelector(name="Stations")
@@ -110,7 +111,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             )
         self._sidebar.append(
             pn.Accordion(
-                ("Display Options", pn.WidgetBox(self.timestamp, self.relative_colorbox, self.show_grid)),
+                ("Display Options", pn.WidgetBox(self.timestamp, self.relative_colorbox,
+                 self.show_grid, self.show_timeseries)),
                 active=[0],
             ),
         )
@@ -162,6 +164,10 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     def main(self) -> pn.Column:
         return self._main
 
+    @property
+    def timeseries(self) -> pn.Column:
+        return self._timeseries
+
     def _update_dataset_file(self, event: pn.Event) -> None:
         logger.debug("Using dataset: %s", self.dataset_file.value)
         self._dataset = utils.open_dataset(self.dataset_file.value, load=False)
@@ -210,7 +216,16 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             logger.debug("Created trimesh")
             dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
             logger.debug("Created dynamic map")
-            self._main.objects = [dmap]
+
+            #update time series
+            if self.show_timeseries.value:
+               hs,hp=api.get_timeseries(self,trimesh)
+               self._main.objects = [dmap*hp,hs.opts(height=250,responsive=True,align='end',active_tools=["pan", "wheel_zoom"])]
+               logger.info("update timeseries")
+            else:
+               self._main.objects = [dmap]
+
+            logger.info("check objects: {}".format(len(self._main.objects)))
         except Exception:
             logger.exception("Failed in _update_main")
             raise

@@ -26,8 +26,8 @@ pn.extension(sizing_mode="scale_width")
 hvopts.defaults(
     hvopts.Image(  # pylint: disable=no-member
         # Don't set both height and width, or the UI will not be responsive!
-        height=600,
         # width=800,
+        height=500,
         responsive=True,
         show_title=True,
         tools=["hover"],
