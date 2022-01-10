@@ -61,11 +61,11 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # data variables
         self._dataset: xr.Dataset
         self._variables: list[str]
+        self.xys=[]
 
         # UI components
         self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
         self._sidebar = pn.Column()
-        self._timeseries=pn.Column()
 
         ## Define widgets  # noqa
         self.dataset_file = pn.widgets.Select(
@@ -81,7 +81,11 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.timestamp = pn.widgets.Select(name="Timestamp")
         self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox")
         self.show_grid = pn.widgets.Checkbox(name="Show Grid")
-        self.show_timeseries = pn.widgets.Checkbox(name="Show Time Series")
+        #time series
+        self.timeseries_fixed = pn.widgets.Checkbox(name="Fixed")
+        self.timeseries_dynamic = pn.widgets.Checkbox(name="Dynamic")
+        self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts'])
+        #self.timeseries_len=pn.widgets.Checkbox(name="number of pts")
         # stations
         self.stations_file = pn.widgets.Select(name="Stations file")
         self.stations = pn.widgets.CrossSelector(name="Stations")
@@ -112,7 +116,13 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._sidebar.append(
             pn.Accordion(
                 ("Display Options", pn.WidgetBox(self.timestamp, self.relative_colorbox,
-                 self.show_grid, self.show_timeseries)),
+                 self.show_grid,)),
+                active=[0],
+            ),
+        )
+        self._sidebar.append(
+            pn.Accordion(
+                ("Time Series", pn.WidgetBox(pn.Row('Time Series \n(double click) ',self.timeseries_fixed,self.timeseries_dynamic),self.timeseries_pts,)),
                 active=[0],
             ),
         )
@@ -164,10 +174,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     def main(self) -> pn.Column:
         return self._main
 
-    @property
-    def timeseries(self) -> pn.Column:
-        return self._timeseries
-
     def _update_dataset_file(self, event: pn.Event) -> None:
         logger.debug("Using dataset: %s", self.dataset_file.value)
         self._dataset = utils.open_dataset(self.dataset_file.value, load=False)
@@ -218,12 +224,13 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             logger.debug("Created dynamic map")
 
             #update time series
-            if self.show_timeseries.value:
-               hs,hp=api.get_timeseries(self,trimesh)
-               self._main.objects = [dmap*hp,hs.opts(height=250,responsive=True,align='end',active_tools=["pan", "wheel_zoom"])]
+            if self.timeseries_fixed.value or self.timeseries_dynamic.value:
+               self.timeseries_source, self.timeseries_dmap=trimesh, dmap
+               #self.timeseries_len.param.watch(fn=api.get_timeseries(self), parameter_names="value")
+               api.get_timeseries(self)
                logger.info("update timeseries")
             else:
-               self._main.objects = [dmap]
+               self._main.objects = [dmap.opts(height=650)]
 
             logger.info("check objects: {}".format(len(self._main.objects)))
         except Exception:
