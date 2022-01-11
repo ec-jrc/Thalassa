@@ -61,7 +61,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # data variables
         self._dataset: xr.Dataset
         self._variables: list[str]
-        self.xys=[]
+        self._timeseries_data=api.timeseries_data()
 
         # UI components
         self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
@@ -85,7 +85,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.timeseries_fixed = pn.widgets.Checkbox(name="Fixed")
         self.timeseries_dynamic = pn.widgets.Checkbox(name="Dynamic")
         self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts'])
-        #self.timeseries_len=pn.widgets.Checkbox(name="number of pts")
         # stations
         self.stations_file = pn.widgets.Select(name="Stations file")
         self.stations = pn.widgets.CrossSelector(name="Stations")
@@ -158,6 +157,9 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         )
         # Display options callbacks
         self.dataset_file.param.watch(fn=self._update_timestamp, parameter_names="value")
+        self.timeseries_fixed.param.watch(fn=self._update_main,parameter_names="value")
+        self.timeseries_dynamic.param.watch(fn=self._update_main,parameter_names="value")
+        self.timeseries_pts.param.watch(fn=self._update_main,parameter_names="value")
         # Station callbacks
         #
         # Render button
@@ -226,8 +228,15 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             #update time series
             if self.timeseries_fixed.value or self.timeseries_dynamic.value:
                self.timeseries_source, self.timeseries_dmap=trimesh, dmap
-               #self.timeseries_len.param.watch(fn=api.get_timeseries(self), parameter_names="value")
-               api.get_timeseries(self)
+               hp,ha=api.get_timeseries(
+                   trimesh,
+                   self._timeseries_data,
+                   self._dataset,
+                   self.timeseries_pts.value,
+                   self.timeseries_fixed.value,
+                   self.timeseries_dynamic.value,
+               )
+               self._main.objects = [dmap*hp,ha]
                logger.info("update timeseries")
             else:
                self._main.objects = [dmap.opts(height=650)]
