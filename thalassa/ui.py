@@ -82,9 +82,10 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox")
         self.show_grid = pn.widgets.Checkbox(name="Show Grid")
         #time series
-        self.timeseries_fixed = pn.widgets.Checkbox(name="Fixed")
-        self.timeseries_dynamic = pn.widgets.Checkbox(name="Dynamic")
-        self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts'])
+        self.timeseries = pn.widgets.Checkbox(name="Time Series (double click)",width=150)
+        self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts','clear'],width=300)
+        self.timeseries_ymin = pn.widgets.TextInput(value='-1.0',name="ymin",width=100)
+        self.timeseries_ymax = pn.widgets.TextInput(value='1.0',name="ymax",width=100)
         # stations
         self.stations_file = pn.widgets.Select(name="Stations file")
         self.stations = pn.widgets.CrossSelector(name="Stations")
@@ -121,7 +122,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         )
         self._sidebar.append(
             pn.Accordion(
-                ("Time Series", pn.WidgetBox(pn.Row('Time Series \n(double click) ',self.timeseries_fixed,self.timeseries_dynamic),self.timeseries_pts,)),
+                ("Time Series", pn.WidgetBox(self.timeseries,
+                 pn.Row(self.timeseries_ymin,self.timeseries_ymax),self.timeseries_pts,)),
                 active=[0],
             ),
         )
@@ -157,8 +159,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         )
         # Display options callbacks
         self.dataset_file.param.watch(fn=self._update_timestamp, parameter_names="value")
-        self.timeseries_fixed.param.watch(fn=self._update_main,parameter_names="value")
-        self.timeseries_dynamic.param.watch(fn=self._update_main,parameter_names="value")
+        self.timeseries.param.watch(fn=self._update_main,parameter_names="value")
         self.timeseries_pts.param.watch(fn=self._update_main,parameter_names="value")
         # Station callbacks
         #
@@ -226,17 +227,18 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             logger.debug("Created dynamic map")
 
             #update time series
-            if self.timeseries_fixed.value or self.timeseries_dynamic.value:
-               self.timeseries_source, self.timeseries_dmap=trimesh, dmap
-               hp,ha=api.get_timeseries(
+            if self.timeseries.value:
+               if self.timeseries_pts.value=='clear':
+                  self._timeseries_data.clear()
+               hpoint,hcurve=api.get_timeseries(
                    trimesh,
                    self._timeseries_data,
                    self._dataset,
+                   self.timeseries_ymin.value,
+                   self.timeseries_ymax.value,
                    self.timeseries_pts.value,
-                   self.timeseries_fixed.value,
-                   self.timeseries_dynamic.value,
                )
-               self._main.objects = [dmap*hp,ha]
+               self._main.objects = [dmap*hpoint,hcurve]
                logger.info("update timeseries")
             else:
                self._main.objects = [dmap.opts(height=650)]
