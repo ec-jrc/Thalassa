@@ -62,6 +62,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._dataset: xr.Dataset
         self._variables: list[str]
         self._timeseries_data=api.timeseries_data()
+        self._timestamp='None'
 
         # UI components
         self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
@@ -211,37 +212,41 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # Not sure what is going on here, but panel seems to shallow exceptions within callbacks
         # Having an explicit try/except at least allows to log the error
         try:
-            self._debug_ui()
-            self._dataset = utils.open_dataset(self.dataset_file.value, load=True)
-            trimesh = api.get_trimesh(
-                self._dataset,
-                self.longitude_var.value,
-                self.latitude_var.value,
-                self.elevation_var.value,
-                self.simplices_var.value,
-                self.time_var.value,
-                timestamp=self.timestamp.value,
-            )
-            logger.debug("Created trimesh")
-            dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
-            logger.debug("Created dynamic map")
+            if self._timestamp!=self.timestamp.value:
+               self._debug_ui()
+               self._dataset = utils.open_dataset(self.dataset_file.value, load=True)
+               trimesh = api.get_trimesh(
+                   self._dataset,
+                   self.longitude_var.value,
+                   self.latitude_var.value,
+                   self.elevation_var.value,
+                   self.simplices_var.value,
+                   self.time_var.value,
+                   timestamp=self.timestamp.value,
+               )
+               logger.debug("Created trimesh")
+               dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
+               logger.debug("Created dynamic map")
+
+               #save plot for efficiency
+               self.trimesh,self.dmap,self._timestamp=trimesh,dmap,self.timestamp.value
 
             #update time series
             if self.timeseries.value:
                if self.timeseries_pts.value=='clear':
                   self._timeseries_data.clear()
                hpoint,hcurve=api.get_timeseries(
-                   trimesh,
+                   self.trimesh,
                    self._timeseries_data,
                    self._dataset,
                    self.timeseries_ymin.value,
                    self.timeseries_ymax.value,
                    self.timeseries_pts.value,
                )
-               self._main.objects = [dmap*hpoint,hcurve]
+               self._main.objects = [self.dmap*hpoint,hcurve]
                logger.info("update timeseries")
             else:
-               self._main.objects = [dmap.opts(height=650)]
+               self._main.objects = [self.dmap.opts(height=650)]
 
             logger.info("check objects: {}".format(len(self._main.objects)))
         except Exception:

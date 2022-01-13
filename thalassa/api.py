@@ -155,11 +155,12 @@ def get_timeseries(source,data,dataset,ymin,ymax,fmt):
         if mdist>data.mdist:
            mdata=mdata*np.nan
         hdynamic=hv.Curve((data.time,mdata)).opts(color='k',line_width=2,line_dash='dotted')
-        hcurve=hv.HoloMap({'dynamic':hdynamic,**{(i+1):k.opts(visible=True) for i,k in enumerate(data.curve)}}).overlay()
+        hcurve=hv.HoloMap({'dynamic':hdynamic,**{(i+1):k for i,k in enumerate(data.curve)}}).overlay()
         return hcurve
 
     hpoint=gv.DynamicMap(get_plot_point,streams=[DoubleTap(source=source,transient=True)])
     hcurve=gv.DynamicMap(get_plot_curve,streams=[PointerXY(x=data.x0,y=data.y0,source=source)]).opts(
-          height=300,ylim=(float(ymin),float(ymax)),responsive=True,align='end',active_tools=["pan", "wheel_zoom"])
+          height=400,legend_cols=len(data.xys)+1,legend_position='top',
+          ylim=(float(ymin),float(ymax)),responsive=True,align='end',active_tools=["pan", "wheel_zoom"])
 
     return hpoint,hcurve
