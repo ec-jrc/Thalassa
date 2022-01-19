@@ -68,23 +68,29 @@ def get_elevation_dmap(trimesh: gv.TriMesh, show_grid: bool = False) -> hv.Overl
 #----------------------------------------------------------------------------------------
 #time series
 #----------------------------------------------------------------------------------------
-#define a class to store data related to time series points
 class TimeseriesData:
+      '''
+      define a class to store data related to time series points
+      '''
       def __init__(self):
          self.init=False
       def clear(self):
           self.init=False
 
-#function for extracting time series@(x,y) from data
 def extract_timeseries(x,y,sx,sy,data):
+    '''
+    function for extracting time series@(x,y) from data
+    '''
     dist=abs(sx+1j*sy-x-1j*y)
     mdist=dist.min()
     nid=np.nonzero(dist==mdist)[0][0]
     mdata=data['elev'].data[:,nid].copy()
     return mdist,mdata
 
-#function to dynamically add or remove pts by double clicking on the map
 def add_remove_pts(x,y,data,dataset,fmt):
+    '''
+    function to dynamically add or remove pts by double clicking on the map
+    '''
     if fmt=='add pts':
        if len(data.xys)==0:
           mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
@@ -114,8 +120,10 @@ def add_remove_pts(x,y,data,dataset,fmt):
     else:
        pass
 
-#get time series plots
 def get_timeseries(source,data,dataset,ymin,ymax,fmt):
+    '''
+    get time series plots
+    '''
     #initialize timeseries_data
     if data.init is False:
        #find the maximum side length
