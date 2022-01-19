@@ -61,7 +61,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # data variables
         self._dataset: xr.Dataset
         self._variables: list[str]
-        self._timeseries_data=api.timeseries_data()
+        self._TimeseriesData=api.TimeseriesData()
         self._timestamp='None'
 
         # UI components
@@ -234,10 +234,10 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             #update time series
             if self.timeseries.value:
                if self.timeseries_pts.value=='clear':
-                  self._timeseries_data.clear()
+                  self._TimeseriesData.clear()
                hpoint,hcurve=api.get_timeseries(
                    self.trimesh,
-                   self._timeseries_data,
+                   self._TimeseriesData,
                    self._dataset,
                    self.timeseries_ymin.value,
                    self.timeseries_ymax.value,

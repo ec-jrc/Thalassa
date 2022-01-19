@@ -69,7 +69,7 @@ def get_elevation_dmap(trimesh: gv.TriMesh, show_grid: bool = False) -> hv.Overl
 #time series
 #----------------------------------------------------------------------------------------
 #define a class to store data related to time series points
-class timeseries_data:
+class TimeseriesData:
       def __init__(self):
          self.init=False
       def clear(self):
