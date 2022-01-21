@@ -61,11 +61,12 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # data variables
         self._dataset: xr.Dataset
         self._variables: list[str]
+        self._TimeseriesData=api.TimeseriesData()
+        self._timestamp='None'
 
         # UI components
         self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
         self._sidebar = pn.Column()
-        self._timeseries=pn.Column()
 
         ## Define widgets  # noqa
         self.dataset_file = pn.widgets.Select(
@@ -81,7 +82,11 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.timestamp = pn.widgets.Select(name="Timestamp")
         self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox")
         self.show_grid = pn.widgets.Checkbox(name="Show Grid")
-        self.show_timeseries = pn.widgets.Checkbox(name="Show Time Series")
+        #time series
+        self.timeseries = pn.widgets.Checkbox(name="Time Series (double click)",width=150)
+        self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts','clear'],width=300)
+        self.timeseries_ymin = pn.widgets.TextInput(value='-1.0',name="ymin",width=100)
+        self.timeseries_ymax = pn.widgets.TextInput(value='1.0',name="ymax",width=100)
         # stations
         self.stations_file = pn.widgets.Select(name="Stations file")
         self.stations = pn.widgets.CrossSelector(name="Stations")
@@ -112,7 +117,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._sidebar.append(
             pn.Accordion(
                 ("Display Options", pn.WidgetBox(self.timestamp, self.relative_colorbox,
-                 self.show_grid, self.show_timeseries)),
+                 self.show_grid,)),
+                active=[0],
+            ),
+        )
+        self._sidebar.append(
+            pn.Accordion(
+                ("Time Series", pn.WidgetBox(self.timeseries,
+                 pn.Row(self.timeseries_ymin,self.timeseries_ymax),self.timeseries_pts,)),
                 active=[0],
             ),
         )
@@ -148,6 +160,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         )
         # Display options callbacks
         self.dataset_file.param.watch(fn=self._update_timestamp, parameter_names="value")
+        self.timeseries.param.watch(fn=self._update_main,parameter_names="value")
+        self.timeseries_pts.param.watch(fn=self._update_main,parameter_names="value")
         # Station callbacks
         #
         # Render button
@@ -163,10 +177,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     @property
     def main(self) -> pn.Column:
         return self._main
-
-    @property
-    def timeseries(self) -> pn.Column:
-        return self._timeseries
 
     def _update_dataset_file(self, event: pn.Event) -> None:
         logger.debug("Using dataset: %s", self.dataset_file.value)
@@ -202,28 +212,41 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # Not sure what is going on here, but panel seems to shallow exceptions within callbacks
         # Having an explicit try/except at least allows to log the error
         try:
-            self._debug_ui()
-            self._dataset = utils.open_dataset(self.dataset_file.value, load=True)
-            trimesh = api.get_trimesh(
-                self._dataset,
-                self.longitude_var.value,
-                self.latitude_var.value,
-                self.elevation_var.value,
-                self.simplices_var.value,
-                self.time_var.value,
-                timestamp=self.timestamp.value,
-            )
-            logger.debug("Created trimesh")
-            dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
-            logger.debug("Created dynamic map")
+            if self._timestamp!=self.timestamp.value:
+               self._debug_ui()
+               self._dataset = utils.open_dataset(self.dataset_file.value, load=True)
+               trimesh = api.get_trimesh(
+                   self._dataset,
+                   self.longitude_var.value,
+                   self.latitude_var.value,
+                   self.elevation_var.value,
+                   self.simplices_var.value,
+                   self.time_var.value,
+                   timestamp=self.timestamp.value,
+               )
+               logger.debug("Created trimesh")
+               dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
+               logger.debug("Created dynamic map")
+
+               #save plot for efficiency
+               self.trimesh,self.dmap,self._timestamp=trimesh,dmap,self.timestamp.value
 
             #update time series
-            if self.show_timeseries.value:
-               hs,hp=api.get_timeseries(self,trimesh)
-               self._main.objects = [dmap*hp,hs.opts(height=250,responsive=True,align='end',active_tools=["pan", "wheel_zoom"])]
+            if self.timeseries.value:
+               if self.timeseries_pts.value=='clear':
+                  self._TimeseriesData.clear()
+               hpoint,hcurve=api.get_timeseries(
+                   self.trimesh,
+                   self._TimeseriesData,
+                   self._dataset,
+                   self.timeseries_ymin.value,
+                   self.timeseries_ymax.value,
+                   self.timeseries_pts.value,
+               )
+               self._main.objects = [self.dmap*hpoint,hcurve]
                logger.info("update timeseries")
             else:
-               self._main.objects = [dmap]
+               self._main.objects = [self.dmap.opts(height=650)]
 
             logger.info("check objects: {}".format(len(self._main.objects)))
         except Exception:
