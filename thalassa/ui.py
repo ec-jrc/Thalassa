@@ -32,6 +32,7 @@ def error(msg: str) -> pn.Column:
     logger.error(msg)
     return pn.pane.Markdown(msg, style=ERROR)
 
+
 class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     """
     This UI is supposed to be used with a Bootstrap-like template supporting
@@ -65,7 +66,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._timestamp='None'
 
         # UI components
-        self._main = pn.Column(error("## Please select a `dataset_file` and click on the `Render` button."))
+        self._main = pn.Column(info("## Please select a `dataset_file` and click on the `Render` button."))
         self._sidebar = pn.Column()
 
         ## Define widgets  # noqa
