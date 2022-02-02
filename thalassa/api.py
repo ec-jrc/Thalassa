@@ -94,7 +94,7 @@ def add_remove_pts(x,y,data,dataset,fmt):
     if fmt=='add pts':
        if len(data.xys)==0:
           mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
-          hcurve=hv.Curve((data.time,mdata),'time','elevation')
+          hcurve=hv.Curve((data.time,mdata),'time','elevation').opts(tools=["hover"])
           if mdist<=data.mdist:
              data.xys.append((x,y))
              data.elev.append(mdata)
@@ -102,7 +102,7 @@ def add_remove_pts(x,y,data,dataset,fmt):
        else:
           if data.xys[-1][0]!=x and data.xys[-1][1]!=y:
              mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
-             hcurve=hv.Curve((data.time,mdata),'time','elevation')
+             hcurve=hv.Curve((data.time,mdata),'time','elevation').opts(tools=["hover"])
              if mdist<=data.mdist:
                 data.xys.append((x,y))
                 data.elev.append(mdata)
