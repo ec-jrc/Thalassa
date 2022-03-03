@@ -39,7 +39,6 @@ hvopts.defaults(
 
 
 ui = thalassa.ThalassaUI(
-    display_variables=True,
     display_stations=True,
 )
 
