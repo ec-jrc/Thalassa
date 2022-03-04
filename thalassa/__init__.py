@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from .api import get_tiles
-from .api import get_timeseries
 from .ui import ThalassaUI
 from .utils import reload
 

@@ -65,6 +65,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
         #time series
         self.timeseries        = pn.widgets.Checkbox(name="Time Series (double click)")
+        self.timeseries_variable = pn.widgets.Select(name="Variable")
+        self.timeseries_layer  = pn.widgets.Select(name="Layer",options=["surface","bottom"],value="surface")
         self.timeseries_pts    = pn.widgets.RadioButtonGroup(options=['add pts','remove pts','clear'])
         self.timeseries_ymin   = pn.widgets.TextInput(value='-1.0',name="ymin")
         self.timeseries_ymax   = pn.widgets.TextInput(value='1.0',name="ymax")
@@ -90,7 +92,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         )
         self._sidebar.append(
             pn.Accordion(
-                ("Time Series", pn.WidgetBox(self.timeseries,
+                ("Time Series", pn.WidgetBox(self.timeseries, #pn.Row(self.timeseries_variable,self.timeseries_layer),
                  pn.Row(self.timeseries_ymin, self.timeseries_ymax), self.timeseries_pts,)),
                 active=[0],
             ),
@@ -102,13 +104,16 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._sidebar.append(self.render_button)
 
     def _define_widget_callbacks(self) -> None:
-        # Dataset callback
+        #Dataset callback
         self.dataset_file.param.watch(fn=self._read_header_info, parameter_names="value")
         self.prj.param.watch(fn=self._read_header_info,parameter_names="value")
+        #timeseries callback
         self.timeseries.param.watch(fn=self._update_main,parameter_names="value")
         self.timeseries_pts.param.watch(fn=self._update_main,parameter_names="value")
-        # Station callbacks
-        # Render button
+        #self.timeseries_variable.param.watch(fn=self._init_timeseries,parameter_names="value")
+        #self.timeseries_layer.param.watch(fn=self._init_timeseries,parameter_names="value")
+        #Station callbacks
+        #Render button
         self.render_button.on_click(self._update_main)
 
     def _populate_widgets(self) -> None:
@@ -124,8 +129,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
     def _read_header_info(self,event: pn.Event): 
         self._MData=api.MapData()
-        self._TSData=api.TimeseriesData()
-
         hdata=utils.read_dataset(self.dataset_file.value,1,self.dataset_format.value,self.prj.value)
         self._MData.name      = self.dataset_file.value
         self._MData.format    = self.dataset_format.value
@@ -141,9 +144,18 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         #transform projection
         if self.prj.value!='epsg:4326':
            self._MData.y, self._MData.x = Transformer.from_crs(self.prj.value,'epsg:4326').transform(self._MData.x,self._MData.y)
-
+        
         self.time.param.set_param(options=[*hdata[1]], value=hdata[1][0])
         self.variable.param.set_param(options=hdata[2], value=hdata[2][0])
+        self.timeseries_variable.param.set_param(options=hdata[2], value=hdata[2][0])
+
+        #initilize Timeseries class
+        self._init_timeseries(event)
+        #self._TSData=api.TimeseriesData(self._MData)
+
+    def _init_timeseries(self,event: pn.Event):
+        #self._TSData=api.TimeseriesData(self._MData, self.timeseries_variable.value, self.timeseries_layer.value)
+        self._TSData=api.TimeseriesData(self._MData, self.timeseries_variable.value, self.layer.value)
 
     def _debug_ui(self) -> None:
         logger.debug("Widget values:")
@@ -157,8 +169,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # Having an explicit try/except at least allows to log the error
         try:
             if self._MData.time!=self.time.value or self._MData.variable!=self.variable.value or self._MData.layer!=self.layer.value:
-               if self._MData.variable!=self.variable.value or self._MData.layer!=self.layer.value:
-                  self._TSData=api.TimeseriesData()
+               #if self._MData.variable!=self.variable.value or self._MData.layer!=self.layer.value:
+               #   self._TSData=api.TimeseriesData(self._MData)
 
                #read dataset snapshot values 
                self._debug_ui()
@@ -177,14 +189,12 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             #update time series
             if self.timeseries.value:
                if self.timeseries_pts.value=='clear':
-                  self._TSData.clear()
-               hpoint,hcurve=api.get_timeseries(
-                   self._MData,
-                   self._TSData,
-                   self.timeseries_ymin.value,
-                   self.timeseries_ymax.value,
-                   self.timeseries_pts.value,
-               )
+                  self._TSData=api.TimeseriesData(self._MData)
+               hpoint,hcurve=self._TSData.get_timeseries(self.timeseries_ymin.value,
+                                 self.timeseries_ymax.value, self.timeseries_pts.value)
+
+            #display map and time series
+            if self.timeseries.value:
                self._main.objects = [dmap*hpoint,hcurve]
                logger.info("update timeseries")
             else:

@@ -10,18 +10,21 @@ import numpy as np
 import xarray as xr
 logger = logging.getLogger(__name__)
 
-def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',time=None,variable=None,layer=None):
+def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',
+                 time=None,variable=None,layer=None,node=None):
     '''
     function to read information of dataset    
     Inputs:
        fname:    path of dataset file, or file handle (xr.Dataset)
        method:   different ways to read dataset
-                 0: open dataset; 1: read header information; 2: read dataset snapshot
+                 0: open dataset; 1: read header information; 
+                 2: read dataset snapshot; 3: read time series 
        dataset_format: format of dataset 
        prj:      projection of dataset coordinate
        time:     timestamp or index of timestamp for dataset snapshot
        variable: variable to be read
        layer:    layer for 3D variables 
+       node:     index of node for reading time series (for method=3)
 
     note: only SCHISM format is defined so far
     '''
@@ -66,6 +69,7 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',time=Non
           elnode=elnode.astype('int')
 
           return ds,times,variables,x,y,elnode
+
        elif method==2: #extract one snapshot of dataset
           #time index
           if isinstance(time,int): 
@@ -80,7 +84,6 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',time=Non
           elif ds.variables[variable].ndim==2:
              mdata=ds.variables[variable][tid].values
           elif ds.variables[variable].ndim==3:
-             #layer index
              if layer=='surface':
                 mdata=ds.variables[variable][tid,:,-1].values
              elif layer=='bottom':
@@ -89,11 +92,29 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',time=Non
                    pid=np.arange(len(zid))
                    mdata=ds.variables[variable][tid].values[pid,zid]
                 else:
-                   mdata=ds.variables[variable][tid,:,-1].values
+                   mdata=ds.variables[variable][tid,:,0].values
              else:
                 mdata=ds.variables[variable][tid,:,layer].values
 
           return mdata
+
+       elif method==3: #extract time series
+          if ds.variables[variable].ndim==2:
+             mdata=ds.variables[variable][:,node].values
+          elif ds.variables[variable].ndim==3:
+             if layer=='surface':
+                zid=-1
+             elif layer=='bottom':
+                if 'node_bottom_index' in [*ds.variables]:
+                   zid=ds.variables['node_bottom_index'][node].values.astype('int')
+                else:
+                   zid=0
+             else:
+                zid=layer
+             mdata=ds.variables[variable][:,node,zid].values
+          
+          return mdata 
+
        else:
         raise ValueError(f"unknown read method for SCHISM model: {method}")
     else:
