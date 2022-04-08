@@ -39,8 +39,19 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',
            ds = xr.open_dataset(fname, mask_and_scale=True, engine="zarr")
        else:
            raise ValueError(f"unknown format of dataset: {fname}")
-       if method==0: 
-          return ds
+
+    #retrun file handle and data_format
+    if method==0:
+       #infer data format
+       if 'SCHISM_hgrid_face_nodes' in [*ds.variables]:
+          dataset_format=='SCHISM'
+       else:
+          dataset_format=None
+
+       if dataset_format is None:
+           raise ValueError(f"unknown model of dataset: {fname}; please define its format and read method")
+
+       return ds,dataset_format
 
     #read dataset
     if dataset_format=="SCHISM":

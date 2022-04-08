@@ -55,7 +55,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.dataset_file = pn.widgets.Select(
             name="Dataset file", options=sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_DIR))),
         )
-        self.dataset_format    = pn.widgets.Select(name="Format",options=["SCHISM",])
+        #self.dataset_format    = pn.widgets.Select(name="Format",options=["SCHISM",])
         self.prj               = pn.widgets.TextInput(value='epsg:4326',name="Projection")
         self.time              = pn.widgets.Select(name="Time")
         self.variable          = pn.widgets.Select(name="Variable")
@@ -85,7 +85,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     def _setup_ui(self) -> None:
         self._sidebar.append(
             pn.Accordion(
-                ("Input Files", pn.WidgetBox(self.dataset_file, pn.Row(self.dataset_format,self.prj),
+                ("Input Files", pn.WidgetBox(self.dataset_file, self.prj, #pn.Row(self.dataset_format,self.prj),
                  self.time, pn.Row(self.variable,self.layer), pn.Row(self.relative_colorbox,self.show_grid),)),
                 active=[0],
             ),
@@ -129,9 +129,10 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
     def _read_header_info(self,event: pn.Event): 
         self._MData=api.MapData()
-        hdata=utils.read_dataset(self.dataset_file.value,1,self.dataset_format.value,self.prj.value)
+        self.dataset_format=utils.read_dataset(self.dataset_file.value)[1]
+        hdata=utils.read_dataset(self.dataset_file.value,1,self.dataset_format,self.prj.value)
         self._MData.name      = self.dataset_file.value
-        self._MData.format    = self.dataset_format.value
+        self._MData.format    = self.dataset_format
         self._MData.prj       = self.prj.value
         self._MData.dataset   = hdata[0]
         self._MData.times     = hdata[1]

@@ -72,7 +72,7 @@ class MapData:
                        title=f"SCHISM Forecast: {self.variable}",
                        colorbar=True,
                        clabel="meters",
-                       cmap="jet",
+                       #cmap="jet",
                        show_legend=True,
                       )
           else:
