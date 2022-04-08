@@ -45,6 +45,10 @@ class MapData:
           self.trimesh   = None
           self.trimap    = None
           self.tiles     = get_tiles()
+          #max value
+          self.variable_max  = ''
+          self.layer_max     = 0
+          self.data_max      = None
 
       def get_data(self,time,variable,layer):
           '''
@@ -53,8 +57,18 @@ class MapData:
           self.time     = time
           self.variable = variable
           self.layer    = layer
-          tid=int(np.nonzero(np.array(self.times)==time)[0][0])
-          self.data=utils.read_dataset(self.dataset,2,self.format,time=tid,variable=variable,layer=layer)
+
+          if time=='max':
+             if variable==self.variable_max and layer==self.layer_max:
+                self.data=self.data_max
+             else:
+                self.data=utils.read_dataset(self.dataset,2,self.format,time=time,variable=variable,layer=layer)
+                self.variable_max=variable
+                self.layer_max=layer
+                self.data_max=self.data
+          else:
+             tid=int(np.nonzero(np.array(self.times)==time)[0][0])
+             self.data=utils.read_dataset(self.dataset,2,self.format,time=tid,variable=variable,layer=layer)
 
       def get_plot_map(self): 
           '''

@@ -146,7 +146,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         if self.prj.value!='epsg:4326':
            self._MData.y, self._MData.x = Transformer.from_crs(self.prj.value,'epsg:4326').transform(self._MData.x,self._MData.y)
         
-        self.time.param.set_param(options=[*hdata[1]], value=hdata[1][0])
+        self.time.param.set_param(options=['max',*hdata[1]], value=hdata[1][0])
         self.variable.param.set_param(options=hdata[2], value=hdata[2][0])
         self.timeseries_variable.param.set_param(options=hdata[2], value=hdata[2][0])
 

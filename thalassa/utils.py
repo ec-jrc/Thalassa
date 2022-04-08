@@ -83,7 +83,12 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',
 
        elif method==2: #extract one snapshot of dataset
           #time index
-          if isinstance(time,int): 
+          if isinstance(time,str):
+             if time=='max': 
+                tid=-1 #for maximum value
+             elif time=='min':
+                tid=-2 #for minimum value
+          elif isinstance(time,int): 
              tid=time
           else:
              times=ds['time'].to_pandas().dt.to_pydatetime()
@@ -93,10 +98,18 @@ def read_dataset(fname,method=0,dataset_format="SCHISM",prj='epsg:4326',
           if ds.variables[variable].ndim==1:
              mdata=ds.variables[variable].values
           elif ds.variables[variable].ndim==2:
-             mdata=ds.variables[variable][tid].values
+             if tid==-1: 
+                mdata=ds.variables[variable][:].values.max(axis=0)
+             #elif tid==-2:
+             #   mdata=ds.variables[variable][:].values.min(axis=0)
+             else:
+                mdata=ds.variables[variable][tid].values
           elif ds.variables[variable].ndim==3:
              if layer=='surface':
-                mdata=ds.variables[variable][tid,:,-1].values
+                if tid==-1: 
+                    mdata=ds.variables[variable][:,:,-1].values.max(axis=0)
+                else:
+                    mdata=ds.variables[variable][tid,:,-1].values
              elif layer=='bottom':
                 if 'node_bottom_index' in [*ds.variables]:
                    zid=ds.variables['node_bottom_index'][:].values.astype('int')
