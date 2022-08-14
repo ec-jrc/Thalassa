@@ -4,39 +4,44 @@ import logging
 
 import geoviews as gv
 import holoviews as hv
+import numpy as np
 import pandas as pd
 import xarray as xr
+
 from holoviews.operation.datashader import dynspread
 from holoviews.operation.datashader import rasterize
-from holoviews.streams import PointerXY,DoubleTap
-import numpy as np
+from holoviews.streams import PointerXY
+from holoviews.streams import Tap
+from holoviews.streams import Stream
+
+
+from .utils import get_index_of_nearest_node
 
 logger = logging.getLogger(__name__)
 
-# Load bokeh backend
 hv.extension("bokeh")
 
 
-def get_trimesh(
-    dataset: xr.Dataset,
-    longitude_var: str,
-    latitude_var: str,
-    elevation_var: str,
-    simplices_var: str,
-    time_var: str,
-    timestamp: str | pd.Timestamp,
+def create_trimesh(
+    ds: xr.Dataset,
+    variable: str,
+    timestamp: str | pd.Timestamp | None = None,
+    layer: int | None = None,
 ) -> gv.TriMesh:
-    simplices = dataset[simplices_var].values
-    columns = [longitude_var, latitude_var, elevation_var]
-    if timestamp == "MAXIMUM":
-        points_df = dataset.max(time_var)[columns].to_dataframe()
-    elif timestamp == "MINIMUM":
-        points_df = dataset.min(time_var)[columns].to_dataframe()
+    columns = ["lon", "lat", variable]
+    if layer is not None:
+        ds = ds.isel(layer=layer)
+    if timestamp == "max":
+        points_df = ds[columns].max("time").to_dataframe()
+    elif timestamp == "min":
+        points_df = ds[columns].min("time").to_dataframe()
+    elif timestamp:
+        points_df = ds.sel({"time": timestamp})[columns].to_dataframe().drop(columns="time")
     else:
-        points_df = dataset.sel({time_var: timestamp})[columns].to_dataframe().drop(columns=time_var)
+        points_df = ds[columns].to_dataframe()
     points_df = points_df.reset_index(drop=True)
-    points_gv = gv.Points(points_df, kdims=[longitude_var, latitude_var], vdims=elevation_var)
-    trimesh = gv.TriMesh((simplices, points_gv))
+    points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
+    trimesh = gv.TriMesh((ds.triface_nodes.values, points_gv))
     return trimesh
 
 
@@ -45,130 +50,132 @@ def get_tiles() -> gv.Tiles:
     return tiles
 
 
-def get_wireframe(trimesh: gv.TriMesh) -> hv.Layout:
-    wireframe = dynspread(rasterize(trimesh.edgepaths, precompute=True))
+def get_wireframe(trimesh: gv.TriMesh) -> gv.DynamicMap:
+    wireframe = dynspread(rasterize(trimesh.edgepaths, precompute=True)).opts(tools=[])
     return wireframe
 
 
-def get_elevation_dmap(trimesh: gv.TriMesh, show_grid: bool = False) -> hv.Overlay:
-    tiles = get_tiles()
-    elevation = rasterize(trimesh, precompute=True).opts(  # pylint: disable=no-member
-        title="Elevation Forecast",
+def get_raster(
+    trimesh: gv.TriMesh,
+    title: str = "",
+    clabel: str = "",
+    clim_min: float | None = None,
+    clim_max: float | None = None,
+) -> gv.DynamicMap:
+    raster = rasterize(trimesh, precompute=True).opts(
+        cmap="viridis",
+        clabel=clabel,
         colorbar=True,
-        clabel="meters",
-        show_legend=True,
+        clim=(clim_min, clim_max),
+        title=title,
+        tools=["hover"],
     )
-    logger.debug("show grid: %s", show_grid)
-    if show_grid:
-        overlay = tiles * elevation * get_wireframe(trimesh=trimesh)
-    else:
-        overlay = tiles * elevation
-    return overlay
+    return raster
 
-#----------------------------------------------------------------------------------------
-#time series
-#----------------------------------------------------------------------------------------
-class TimeseriesData:
-      '''
-      define a class to store data related to time series points
-      '''
-      def __init__(self):
-         self.init=False
-      def clear(self):
-          self.init=False
 
-def extract_timeseries(x,y,sx,sy,data):
-    '''
-    function for extracting time series@(x,y) from data
-    '''
-    dist=abs(sx+1j*sy-x-1j*y)
-    mdist=dist.min()
-    nid=np.nonzero(dist==mdist)[0][0]
-    mdata=data['elev'].data[:,nid].copy()
-    return mdist,mdata
+def is_point_in_the_mesh(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
+    """Return `True` if the point is inside the mesh of the `raster`, `False` otherwise"""
+    breakpoint()
+    raster_dataset = raster.values()[0].data
+    data_var_name = raster.ddims[-1].name
+    interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).values
+    return ~np.isnan(interpolated)
 
-def add_remove_pts(x,y,data,dataset,fmt):
-    '''
-    function to dynamically add or remove pts by double clicking on the map
-    '''
-    if fmt=='add pts':
-       if len(data.xys)==0:
-          mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
-          hcurve=hv.Curve((data.time,mdata),'time','elevation').opts(tools=["hover"])
-          if mdist<=data.mdist:
-             data.xys.append((x,y))
-             data.elev.append(mdata)
-             data.curve.append(hcurve)
-       else:
-          if data.xys[-1][0]!=x and data.xys[-1][1]!=y:
-             mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
-             hcurve=hv.Curve((data.time,mdata),'time','elevation').opts(tools=["hover"])
-             if mdist<=data.mdist:
-                data.xys.append((x,y))
-                data.elev.append(mdata)
-                data.curve.append(hcurve)
-    elif fmt=='remove pts':
-       if len(data.xys)>0:
-          xys=np.array(data.xys)
-          dist=abs(xys[:,0]+1j*xys[:,1]-x-1j*y)
-          mdist=dist.min()
-          if mdist<=data.mdist:
-             nid=np.nonzero(dist==mdist)[0][0]
-             data.xys=[k for i,k in enumerate(data.xys) if i!=nid]
-             data.elev=[k for i,k in enumerate(data.elev) if i!=nid]
-             data.curve=[k for i,k in enumerate(data.curve) if i!=nid]
-    else:
-       pass
 
-def get_timeseries(source,data,dataset,ymin,ymax,fmt):
-    '''
-    get time series plots
-    '''
-    #initialize timeseries_data
-    if data.init is False:
-       #find the maximum side length
-       x,y=dataset['SCHISM_hgrid_node_x'].data,dataset['SCHISM_hgrid_node_y'].data
-       e1,e2,e3=dataset['SCHISM_hgrid_face_nodes'].data.T
-       s1=abs((x[e1]-x[e2])+1j*(y[e1]-y[e2])).max()
-       s2=abs((x[e2]-x[e3])+1j*(y[e2]-y[e3])).max()
-       s3=abs((x[e3]-x[e1])+1j*(y[e3]-y[e1])).max()
+def _get_stream_timeseries(
+    ds: xr.Dataset,
+    variable: str,
+    source_raster: gv.DynamicMap,
+    stream_class: Stream,
+    layer: int | None = None,
+) -> gv.DynamicMap:
 
-       #save data
-       data.sx, data.sy, data.x0, data.y0  = x, y, x.mean(), y.mean()
-       data.mdist=np.max([s1,s2,s3])
-       data.time=dataset['time'].data
-       data.xys=[]
-       data.elev=[]
-       data.curve=[]
-       data.init=True
+    if stream_class not in {Tap, PointerXY}:
+        raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
 
-    def get_plot_point(x,y):
-        if None not in [x,y]:
-           add_remove_pts(x,y,data,dataset,fmt)
+    if layer is not None:
+        ds = ds.isel(layer=layer)
+    ds = ds[["lon", "lat", variable]]
 
-        if ((x is None) or (y is None)) and len(data.xys)==0:
-           xys=[(data.x0,data.y0)]
-           hpoint=gv.Points(xys).opts(show_legend=False,visible=False)
-           htext=gv.HoloMap({i:gv.Text(*xy,'{}'.format(i+1)).opts(
-                 show_legend=False,visible=False) for i,xy in enumerate(xys)}).overlay()
+    def callback(x: float, y: float) -> hv.Curve:
+        if not is_point_in_the_mesh(raster=source_raster, lon=x, lat=y):
+            # if the point is not inside the mesh, then omit the timeseries
+            title = f"{variable} - Lon={x:.3f} Lat={y:.3f}"
+            plot = hv.Curve([]).opts(
+                title=title,
+                framewise=True,
+                padding=0.1,
+                show_grid=True,
+                tools=["hover"],
+            )
         else:
-           xys=data.xys
-           hpoint=gv.Points(xys).opts(color='r',size=3,show_legend=False)
-           htext=gv.HoloMap({i:gv.Text(*xy,'{}'.format(i+1)).opts(
-                 show_legend=False,color='k',fontsize=3) for i,xy in enumerate(xys)}).overlay()
-        return hpoint*htext
+            node_index = get_index_of_nearest_node(ds=ds, lon=x, lat=y)
+            ts = ds.isel(node=node_index)
+            title = f"{variable} - Lon={ts.lon.values:.3f} Lat={ts.lat.values:.3f}"
+            plot = (
+                hv.Curve(ts[variable])
+                .redim(variable, range=(ts[variable].min(), ts[variable].max()))
+                .opts(
+                    title=title,
+                    framewise=True,
+                    padding=0.1,
+                    show_grid=True,
+                    tools=["hover"],
+                )
+            )
+        return plot
 
-    def get_plot_curve(x,y):
-        mdist,mdata=extract_timeseries(x,y,data.sx,data.sy,dataset)
-        if mdist>data.mdist:
-           mdata=mdata*np.nan
-        hdynamic=hv.Curve((data.time,mdata)).opts(color='k',line_width=2,line_dash='dotted')
-        hcurve=hv.HoloMap({'dynamic':hdynamic,**{(i+1):k for i,k in enumerate(data.curve)}}).overlay()
-        return hcurve
+    stream = stream_class(x=0, y=0, source=source_raster)
+    dmap = gv.DynamicMap(callback, streams=[stream])
+    return dmap
 
-    hpoint=gv.DynamicMap(get_plot_point,streams=[DoubleTap(source=source,transient=True)])
-    hcurve=gv.DynamicMap(get_plot_curve,streams=[PointerXY(x=data.x0,y=data.y0,source=source)]).opts(
-          height=400,legend_cols=len(data.xys)+1,legend_position='top',
-          ylim=(float(ymin),float(ymax)),responsive=True,align='end',active_tools=["pan", "wheel_zoom"])
 
-    return hpoint,hcurve
+def get_tap_timeseries(
+    ds: xr.Dataset,
+    variable: str,
+    source_raster: gv.DynamicMap,
+    layer: int | None = None,
+) -> gv.DynamicMap:
+    dmap = _get_stream_timeseries(
+        ds=ds,
+        variable=variable,
+        source_raster=source_raster,
+        stream_class=Tap,
+        layer=layer,
+    )
+    return dmap
+
+
+def get_pointer_timeseries(
+    ds: xr.Dataset,
+    variable: str,
+    source_raster: gv.DynamicMap,
+    layer: int | None = None,
+) -> gv.DynamicMap:
+    dmap = _get_stream_timeseries(
+        ds=ds,
+        variable=variable,
+        source_raster=source_raster,
+        stream_class=PointerXY,
+        layer=layer,
+    )
+    return dmap
+
+
+def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) -> xr.DataArray:
+    index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
+    # extracted = ds[[variable, "lon", "lat"]].isel(node=index)
+    return ds[variable].isel(node=index)
+
+
+def plot_timeseries(ts: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
+    node_index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
+    node_lon = ds.lon.isel(node_index)
+    node_lat = ds.lat.isel(node_index)
+    title = f"Lon={x:.3f} Lat={y:.3f} - {node_lon}, {node_lat}"
+    plot = (
+        hv.Curve(ts)
+        .redim(variable, range=(ts.min(), ts.max()))
+        .opts(title=title, framewise=True, padding=0.1, show_grid=True)
+    )
+    return plot

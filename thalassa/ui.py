@@ -1,175 +1,250 @@
 # pylint: disable=unused-argument,no-member
 from __future__ import annotations
 
+import gc
 import glob
 import logging
 import os.path
+import pathlib
 
 import panel as pn
 import xarray as xr
 
 from . import api
 from . import utils
+from . import normalization
 
+import geoviews as gv
 
 logger = logging.getLogger(__name__)
 
 DATA_DIR = "./data/"
 DATA_GLOB = DATA_DIR + os.path.sep + "*"
 
-# CSS Styles
-ERROR = {"border": "3px solid red"}
-INFO = {"border": "2px solid blue"}
+
+MISSING_DATA_DIR = pn.pane.Alert(
+    f"## Directory <{DATA_DIR}> is missing. Please create it and add some suitable netcdf files.",
+    alert_type="danger",
+)
+EMPTY_DATA_DIR = pn.pane.Alert(
+    f"## Directory <{DATA_DIR}> exists but it is empty. Please add some suitable netcdf files.",
+    alert_type="danger",
+)
+CHOOSE_FILE = pn.pane.Alert(
+    "## Please select a *Dataset* and click on the **Render** button.",
+    alert_type="info",
+)
+UNKNOWN_FORMAT = pn.pane.Alert(
+    f"## The selected dataset is in an unknown format. Please choose a different file.",
+    alert_type="danger",
+)
+PLEASE_RENDER = pn.pane.Alert(
+    f"## Please click on the **Render** button to visualize the selected *Variable*",
+    alert_type="info",
+)
 
 
-# Help functions that log messages on stdout AND render them on the browser
-def info(msg: str) -> pn.Column:
-    logger.info(msg)
-    return pn.pane.Markdown(msg, style=INFO)
-
-
-def error(msg: str) -> pn.Column:
-    logger.error(msg)
-    return pn.pane.Markdown(msg, style=ERROR)
+def choose_initial_message() -> pn.pane.Alert:
+    if not pathlib.Path(DATA_DIR).is_dir():
+        message = MISSING_DATA_DIR
+    elif not sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB))):
+        message = EMPTY_DATA_DIR
+    else:
+        message = CHOOSE_FILE
+    return message
 
 
 class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     """
     This UI is supposed to be used with a Bootstrap-like template supporting
     a "main" and a "sidebar":
-
     - `sidebar` will contain the widgets that control what will be rendered in the main area.
       E.g. things like which `source_file` to use, which timestamp to render etc.
-
     - `main` will contain the rendered graphs.
-
     In a nutshell, an instance of the `UserInteface` class will have two private attributes:
-
     - `_main`
     - `_sidebar`
-
     These objects should be of `pn.Column` type. You can append
     """
 
-    def __init__(
-        self,
-        display_variables: bool = True,
-        display_stations: bool = False,
-    ) -> None:
-        self._display_variables = display_variables
-        self._display_stations = display_stations
-
-        # data variables
+    def __init__(self) -> None:
         self._dataset: xr.Dataset
-        self._variables: list[str]
-        self._TimeseriesData=api.TimeseriesData()
-        self._timestamp='None'
 
         # UI components
-        self._main = pn.Column(info("## Please select a `dataset_file` and click on the `Render` button."))
+        self._main = pn.Column(CHOOSE_FILE)
         self._sidebar = pn.Column()
 
-        ## Define widgets  # noqa
+        # Define widgets
         self.dataset_file = pn.widgets.Select(
-            name="Dataset file", options=sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB)))
+            name="Dataset file",
+            options=[""] + sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB))),
         )
-        # variables
-        self.longitude_var = pn.widgets.Select(name="Longitude")
-        self.latitude_var = pn.widgets.Select(name="Latitude")
-        self.elevation_var = pn.widgets.Select(name="Elevation")
-        self.simplices_var = pn.widgets.Select(name="Simplices")
-        self.time_var = pn.widgets.Select(name="Time")
-        # display options
-        self.timestamp = pn.widgets.Select(name="Timestamp")
-        self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox")
-        self.show_grid = pn.widgets.Checkbox(name="Show Grid")
-        #time series
-        self.timeseries = pn.widgets.Checkbox(name="Time Series (double click)",width=150)
-        self.timeseries_pts=pn.widgets.RadioButtonGroup(options=['add pts','remove pts','clear'],width=300)
-        self.timeseries_ymin = pn.widgets.TextInput(value='-1.0',name="ymin",width=100)
-        self.timeseries_ymax = pn.widgets.TextInput(value='1.0',name="ymax",width=100)
-        # stations
-        self.stations_file = pn.widgets.Select(name="Stations file")
-        self.stations = pn.widgets.CrossSelector(name="Stations")
-        # render button
+        self.variable = pn.widgets.Select(name="Variable")
+        self.layer = pn.widgets.Select(name="Layer")
+        self.time = pn.widgets.Select(name="Time")
+        self.relative_colorbox = pn.widgets.Checkbox(name="Relative colorbox", disabled=False)
+        self.show_mesh = pn.widgets.Checkbox(name="Show Mesh")
+        self.show_timeseries = pn.widgets.Checkbox(name="Show Timeseries")
         self.render_button = pn.widgets.Button(name="Render", button_type="primary")
 
-        self._define_widget_callbacks()
-        self._populate_widgets()
-        self._setup_ui()
-
-    def _setup_ui(self) -> None:
-        self._sidebar.append(pn.Accordion(("Input Files", pn.WidgetBox(self.dataset_file)), active=[0]))
-        if self._display_variables:
-            self._sidebar.append(
-                pn.Accordion(
-                    (
-                        "Variables",
-                        pn.WidgetBox(
-                            self.longitude_var,
-                            self.latitude_var,
-                            self.elevation_var,
-                            self.simplices_var,
-                            self.time_var,
-                        ),
-                    )
-                )
-            )
+        # Setup UI
         self._sidebar.append(
-            pn.Accordion(
-                ("Display Options", pn.WidgetBox(self.timestamp, self.relative_colorbox,
-                 self.show_grid,)),
-                active=[0],
-            ),
-        )
-        self._sidebar.append(
-            pn.Accordion(
-                ("Time Series", pn.WidgetBox(self.timeseries,
-                 pn.Row(self.timeseries_ymin,self.timeseries_ymax),self.timeseries_pts,)),
-                active=[0],
-            ),
-        )
-        if self._display_stations:
-            self._sidebar.append(
-                pn.Accordion(("Stations", pn.WidgetBox(self.stations_file, self.stations))),
+            pn.WidgetBox(
+                self.dataset_file,
+                self.variable,
+                self.layer,
+                self.time,
+                pn.Row(self.show_timeseries, self.show_mesh),
             )
+        )
         self._sidebar.append(self.render_button)
+        logger.debug("UI setup: done")
 
-    def _define_widget_callbacks(self) -> None:
-        # Dataset callback
+        # Define callback
         self.dataset_file.param.watch(fn=self._update_dataset_file, parameter_names="value")
-        # Variable callbacks
-        self.dataset_file.param.watch(
-            fn=lambda event: self._set_variable(event, self.longitude_var, 1, "SCHISM_hgrid_node_x"),
-            parameter_names="value",
-        )
-        self.dataset_file.param.watch(
-            fn=lambda event: self._set_variable(event, self.latitude_var, 2, "SCHISM_hgrid_node_y"),
-            parameter_names="value",
-        )
-        self.dataset_file.param.watch(
-            fn=lambda event: self._set_variable(event, self.elevation_var, 0, "elev"),
-            parameter_names="value",
-        )
-        self.dataset_file.param.watch(
-            fn=lambda event: self._set_variable(event, self.simplices_var, 3, "SCHISM_hgrid_face_nodes"),
-            parameter_names="value",
-        )
-        self.dataset_file.param.watch(
-            fn=lambda event: self._set_variable(event, self.time_var, 4, "time"),
-            parameter_names="value",
-        )
-        # Display options callbacks
-        self.dataset_file.param.watch(fn=self._update_timestamp, parameter_names="value")
-        self.timeseries.param.watch(fn=self._update_main,parameter_names="value")
-        self.timeseries_pts.param.watch(fn=self._update_main,parameter_names="value")
-        # Station callbacks
-        #
-        # Render button
+        self.variable.param.watch(fn=self._update_layer, parameter_names="value")
         self.render_button.on_click(self._update_main)
+        logger.debug("Callback definitions: done")
 
-    def _populate_widgets(self) -> None:
-        self.dataset_file.param.trigger("value")
+        initial_message = choose_initial_message()
+        self._reset_ui(message=initial_message)
+
+    def _reset_ui(self, message: pn.pane.Alert) -> None:
+        self.variable.param.set_param(options=[], disabled=True)
+        self.time.param.set_param(options=[], disabled=True)
+        self.layer.param.set_param(options=[], disabled=True)
+        self.show_timeseries.param.set_param(disabled=True)
+        self.show_mesh.param.set_param(disabled=True)
+        self.relative_colorbox.param.set_param(disabled=True)
+        self._main.objects = [message]
+
+    def _update_dataset_file(self, event: pn.Event) -> None:
+        # local variables
+        dataset_file = self.dataset_file.value
+
+        if not dataset_file:
+            logger.debug("No dataset has been selected. Resetting the UI.")
+            self._reset_ui(message=CHOOSE_FILE)
+        else:
+            try:
+                logger.debug("Trying to normalize the selected dataset: %s", dataset_file)
+                self._dataset = normalization.normalize_dataset(utils.open_dataset(dataset_file, load=False))
+            except ValueError as exc:
+                logger.exception("Normalization failed. Resetting the UI")
+                self._reset_ui(message=UNKNOWN_FORMAT)
+            else:
+                logger.exception("Normalization succeeded. Setting widgets")
+                variables = utils.filter_visualizable_data_vars(
+                    self._dataset, self._dataset.data_vars.keys()
+                )
+                self.variable.param.set_param(options=variables, disabled=False)
+                self.show_mesh.param.set_param(disabled=False)
+                self.relative_colorbox.set_param(disabled=False)
+                self._main.objects = [PLEASE_RENDER]
+
+    def _update_layer(self, event: pn.Event) -> None:
+        try:
+            ds = self._dataset
+            variable = self.variable.value
+            # handle layer
+            if variable and "layer" in ds[variable].dims:
+                layers = ds.layer.values.tolist()
+                self.layer.disabled = False
+                self.layer.param.set_param(options=layers)  # , value=layers[0])
+            else:
+                self.layer.param.set_param(options=[])
+                self.layer.disabled = True
+            # handle time
+            if variable and "time" in ds[variable].dims:
+                self.show_timeseries.disabled = False
+                self.time.disabled = False
+                self.time.param.set_param(options=["max"] + list(ds.time.values))
+            else:
+                self.show_timeseries.disabled = True
+                self.time.disabled = True
+                self.time.param.set_param(options=[])
+        except:
+            logger.exception("error layer")
+
+    def _debug_ui(self) -> None:
+        logger.info("Widget values:")
+        widgets = [obj for (name, obj) in self.__dict__.items() if isinstance(obj, pn.widgets.Widget)]
+        for widget in widgets:
+            logger.error("%s: %s", widget.name, widget.value)
+
+    def _update_main(self, event: pn.Event) -> None:
+        try:
+            # XXX For some reason, which I can't understand
+            # Inside this specific callback, the logger requires to be WARN and above...
+            logger.error("Updating main")
+            self._debug_ui()
+
+            # Add a loading icon while we render the plots
+            self._main.loading = True
+
+            # Each time a graph is rendered, data are loaded from the dataset
+            # This increases the RAM usage over time.
+            # In order to avoid this, we re-open the dataset in order to get a Dataset
+            # instance without anyting loaded into memory
+            ds = normalization.normalize_dataset(utils.open_dataset(self.dataset_file.value, load=False))
+
+            # Furthermore, since each graph takes up to a few GBs of RAM, before we create
+            # the new graph we should remove the old ones. In order to do so we need to empty
+            # the `_main` column (remember that it contained references to the old/previous
+            # graph) + we explicitly call `gc.collect()` in order to make sure that they are
+            # removed before the creation of the new ones.
+            self._main.objects = []
+            self._hidden = None
+            gc.collect()
+
+            # local variables
+            variable = self.variable.value
+            timestamp = self.time.value
+            layer = int(self.layer.value) if self.layer.value is not None else None
+
+            # create plots
+            trimesh = api.create_trimesh(ds=ds, variable=variable, timestamp=timestamp, layer=layer)
+            tiles = api.get_tiles()
+            raster = api.get_raster(trimesh)  # .opts(width=1200)
+
+            # Create Colorbar widgets and link them to the raster
+            clim_min = pn.widgets.FloatInput(name="Colorbar min")
+            clim_max = pn.widgets.FloatInput(name="Colorbar max")
+            clim_min.jslink(raster, value="color_mapper.low")
+            clim_max.jslink(raster, value="color_mapper.high")
+            # clim_min.jslink(raster, value="color_mapper.low", bidirectional=True)
+            # clim_max.jslink(raster, value="color_mapper.high", bidirectional=True)
+
+            # create the Layout that will get rendered and and add it to the `_main` Column.
+            if self.show_mesh.value:
+                mesh = api.get_wireframe(trimesh)
+                plot = tiles * raster * mesh
+            else:
+                plot = tiles * raster
+
+            # If the variable depends on `time` and `show_timeseries` has been checked,
+            # then plot the timeseries, too
+            # For the record, (and this is probably a panel bug), if we use
+            #     self._main.append(ts_plot)
+            # then the timeseries plot does not get updated each time we click on the
+            # DynamicMap. By replacing the `objects` though, then the updates work fine.
+            if "time" in ds[variable].dims and self.show_timeseries.value:
+                ts_plot = api.get_tap_timeseries(ds=ds, variable=variable, source_raster=raster, layer=layer)
+                self._main.objects = [
+                    pn.WidgetBox(clim_min, clim_max),
+                    ts_plot,
+                    plot,
+                ]
+            else:
+                self._main.objects = [
+                    pn.Row(clim_min, clim_max),
+                    plot,
+                ]
+
+            # We are done, remove the loading icon
+            self._main.loading = False
+        except:
+            logger.exception("Something went wrong")
 
     @property
     def sidebar(self) -> pn.Column:
@@ -178,79 +253,3 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
     @property
     def main(self) -> pn.Column:
         return self._main
-
-    def _update_dataset_file(self, event: pn.Event) -> None:
-        logger.debug("Using dataset: %s", self.dataset_file.value)
-        self._dataset = utils.open_dataset(self.dataset_file.value, load=False)
-        self._variables = list(self._dataset.variables.keys())  # type: ignore[arg-type]
-
-    def _set_variable(self, event: pn.Event, widget: pn.Widget, index: int, schism_name: str) -> None:
-        # logger.debug("Updating %s", widget.name)
-        if schism_name in self._variables:
-            value = schism_name
-        else:
-            try:
-                value = self._variables[index]
-            except IndexError:
-                logger.error("Not enough variables: %d, %s", index, self._variables)
-                raise
-        widget.param.set_param(options=self._variables, value=value)
-
-    def _update_timestamp(self, event: pn.Event) -> None:
-        dataset_timestamps = self._dataset[self.time_var.value].to_pandas().dt.to_pydatetime()
-        dataset_options = ["MAXIMUM"] + [v.strftime("%Y-%m-%d %H-%M-%S") for v in dataset_timestamps]
-        # self.timestamp.param.set_param(options=dataset_options, value="MAXIMUM")
-        self.timestamp.param.set_param(options=dataset_options, value=dataset_timestamps[0])
-
-    def _debug_ui(self) -> None:
-        logger.debug("Widget values:")
-        widgets = [obj for (name, obj) in self.__dict__.items() if isinstance(obj, pn.widgets.Widget)]
-        for widget in widgets:
-            logger.debug("%s: %s", widget.name, widget.value)
-
-    def _update_main(self, event: pn.Event) -> None:
-        logger.info("Starting: _update_main")
-        # Not sure what is going on here, but panel seems to shallow exceptions within callbacks
-        # Having an explicit try/except at least allows to log the error
-        try:
-            if self._timestamp!=self.timestamp.value:
-               self._debug_ui()
-               self._dataset = utils.open_dataset(self.dataset_file.value, load=True)
-               trimesh = api.get_trimesh(
-                   self._dataset,
-                   self.longitude_var.value,
-                   self.latitude_var.value,
-                   self.elevation_var.value,
-                   self.simplices_var.value,
-                   self.time_var.value,
-                   timestamp=self.timestamp.value,
-               )
-               logger.debug("Created trimesh")
-               dmap = api.get_elevation_dmap(trimesh, show_grid=self.show_grid.value)
-               logger.debug("Created dynamic map")
-
-               #save plot for efficiency
-               self.trimesh,self.dmap,self._timestamp=trimesh,dmap,self.timestamp.value
-
-            #update time series
-            if self.timeseries.value:
-               if self.timeseries_pts.value=='clear':
-                  self._TimeseriesData.clear()
-               hpoint,hcurve=api.get_timeseries(
-                   self.trimesh,
-                   self._TimeseriesData,
-                   self._dataset,
-                   self.timeseries_ymin.value,
-                   self.timeseries_ymax.value,
-                   self.timeseries_pts.value,
-               )
-               self._main.objects = [self.dmap*hpoint,hcurve]
-               logger.info("update timeseries")
-            else:
-               self._main.objects = [self.dmap.opts(height=650)]
-
-            logger.info("check objects: {}".format(len(self._main.objects)))
-        except Exception:
-            logger.exception("Failed in _update_main")
-            raise
-        logger.info("Finished: _update_main")

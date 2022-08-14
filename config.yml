@@ -26,10 +26,10 @@ logging:
     console:
       level: 'DEBUG'
       class: 'logging.StreamHandler'
-      formatter: 'verbose'
+      formatter: 'standard'
       stream : 'ext://sys.stdout'
     file_handler:
-      level: 'INFO'
+      level: 'DEBUG'
       class: 'logging.handlers.WatchedFileHandler'
       formatter: 'verbose'
       filename: '/tmp/thalassa.log'
@@ -41,9 +41,15 @@ logging:
       propagate: false
       handlers:
         - 'console'
+        - 'file_handler'
+    bokeh:
+      level: 'INFO'
+      handlers:
+        - 'console'
     requests:
       level: 'WARNING'
   root:
     level: 'INFO'
     handlers:
       - 'console'
+      - 'file_handler'
