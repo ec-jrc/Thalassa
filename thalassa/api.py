@@ -75,7 +75,6 @@ def get_raster(
 
 def is_point_in_the_mesh(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
     """Return `True` if the point is inside the mesh of the `raster`, `False` otherwise"""
-    breakpoint()
     raster_dataset = raster.values()[0].data
     data_var_name = raster.ddims[-1].name
     interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).values

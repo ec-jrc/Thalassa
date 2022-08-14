@@ -156,7 +156,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                 self.layer.disabled = True
             # handle time
             if variable and "time" in ds[variable].dims:
-                self.show_timeseries.disabled = False
+                # self.show_timeseries.disabled = False
                 self.time.disabled = False
                 self.time.param.set_param(options=["max"] + list(ds.time.values))
             else:
@@ -229,12 +229,13 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # then the timeseries plot does not get updated each time we click on the
             # DynamicMap. By replacing the `objects` though, then the updates work fine.
             if "time" in ds[variable].dims and self.show_timeseries.value:
-                ts_plot = api.get_tap_timeseries(ds=ds, variable=variable, source_raster=raster, layer=layer)
-                self._main.objects = [
-                    pn.WidgetBox(clim_min, clim_max),
-                    ts_plot,
-                    plot,
-                ]
+                pass
+            #     ts_plot = api.get_tap_timeseries(ds=ds, variable=variable, source_raster=raster, layer=layer)
+            #     self._main.objects = [
+            #         pn.WidgetBox(clim_min, clim_max),
+            #         ts_plot,
+            #         plot,
+            #     ]
             else:
                 self._main.objects = [
                     pn.Row(clim_min, clim_max),
