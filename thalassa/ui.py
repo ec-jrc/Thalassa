@@ -172,6 +172,17 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         for widget in widgets:
             logger.error("%s: %s", widget.name, widget.value)
 
+    def _get_spinner(self) -> pn.Column:
+        """Return a `pn.Column` with an horizontally/vertically aligned spinner."""
+        column = pn.Column(
+            pn.layout.Spacer(height=100),
+            pn.Row(
+                pn.layout.HSpacer(),
+                pn.Row(pn.indicators.LoadingSpinner(value=True, width=150, height=150)),
+            ),
+        )
+        return column
+
     def _update_main(self, event: pn.Event) -> None:
         try:
             # XXX For some reason, which I can't understand
@@ -179,16 +190,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             logger.error("Updating main")
             self._debug_ui()
 
-            # Add a loading icon while we render the plots
-            self._main.loading = True
-
-            # Furthermore, since each graph takes up to a few GBs of RAM, before we create
+            # Since each graph takes up to a few GBs of RAM, before we create
             # the new graph we should remove the old ones. In order to do so we need to empty
             # the `_main` column (remember that it contained references to the old/previous
             # graph) + we explicitly call `gc.collect()` in order to make sure that they are
             # removed before the creation of the new ones.
-            self._main.objects = []
-            self._hidden = None
+            # Furthermore, we also want to show to the users that something is being computed,
+            # therefore we replace the _main columns contents with a spinner
+            self._main.objects = [*self._get_spinner().objects]
             gc.collect()
 
             # Each time a graph is rendered, data are loaded from the dataset
@@ -242,9 +251,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                     pn.Row(clim_min, clim_max),
                     plot,
                 ]
-
-            # We are done, remove the loading icon
-            self._main.loading = False
         except:
             logger.exception("Something went wrong")
 
