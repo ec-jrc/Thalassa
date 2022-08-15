@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import logging
 
+import geopandas as gpd
 import geoviews as gv
 import holoviews as hv
 import numpy as np
 import pandas as pd
+import pygeos
+import shapely.wkt
 import xarray as xr
 
 from holoviews.operation.datashader import dynspread
@@ -178,3 +181,60 @@ def plot_timeseries(ts: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
         .opts(title=title, framewise=True, padding=0.1, show_grid=True)
     )
     return plot
+
+
+def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
+    logger.debug("Starting polygon generation")
+    # Get the indexes of the nodes
+    first_nodes = ds.node.values[ds.triface_nodes.values[:, 0]]
+    second_nodes = ds.node.values[ds.triface_nodes.values[:, 1]]
+    third_nodes = ds.node.values[ds.triface_nodes.values[:, 2]]
+
+    # Get the lons/lats of the nodes
+    first_lons = ds.lon.values[first_nodes]
+    first_lats = ds.lat.values[first_nodes]
+    second_lons = ds.lon.values[second_nodes]
+    second_lats = ds.lat.values[second_nodes]
+    third_lons = ds.lon.values[third_nodes]
+    third_lats = ds.lat.values[third_nodes]
+
+    # Stack the coords, one polygon per line
+    polygons_per_line = np.vstack(
+        (
+            first_lons,
+            first_lats,
+            second_lons,
+            second_lats,
+            third_lons,
+            third_lats,
+            first_lons,
+            first_lats,
+        )
+    ).T
+
+    # Re-stack the polygon coords. This time we should have 4 points per
+    polygons_coords = np.stack(
+        (
+            polygons_per_line[:, :2],
+            polygons_per_line[:, 2:4],
+            polygons_per_line[:, 4:6],
+            polygons_per_line[:, 6:8],
+        ),
+        axis=1,
+    )
+    # sanity check
+    if polygons_coords.shape[1:] != (4, 2):
+        raise ValueError("Something went wrong")
+
+    # generate Polygon instance
+    polygons = pygeos.polygons(polygons_coords)
+    polygon = pygeos.set_operations.coverage_union_all(polygons)
+
+    # convert to GeoDataFrame
+    df = pd.DataFrame({"geometry": pygeos.to_wkt(polygon)}, index=[0])
+    df["geometry"] = df["geometry"].apply(shapely.wkt.loads)
+    gdf = gpd.GeoDataFrame(df, geometry="geometry")
+
+    logger.info("Polygon: generated")
+
+    return gdf

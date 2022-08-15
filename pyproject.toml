@@ -22,9 +22,11 @@ geopandas = "^0.11"
 scipy = "^1.9"
 pygeos = {url = "https://github.com/pygeos/pygeos/releases/download/0.12.0/pygeos-0.12.0.tar.gz"}
 shapely = {url = "https://github.com/shapely/shapely/releases/download/1.8.2/Shapely-1.8.2.tar.gz"}
+hvplot = "^0.8.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
+ipykernel = "^6.15.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
