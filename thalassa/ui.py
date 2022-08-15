@@ -251,7 +251,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
             # create the Layout that will get rendered and and add it to the `_main` Column.
             if self.show_mesh.value:
-                mesh = api.get_wireframe(trimesh)
+                mesh = api.get_wireframe(trimesh, x_range=x_range, y_range=y_range)
                 plot = tiles * raster * mesh
             else:
                 plot = tiles * raster
