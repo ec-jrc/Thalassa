@@ -7,6 +7,7 @@ import logging
 import os.path
 import pathlib
 
+import geoviews as gv
 import panel as pn
 import xarray as xr
 
@@ -14,7 +15,6 @@ from . import api
 from . import utils
 from . import normalization
 
-import geoviews as gv
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self) -> None:
         self._dataset: xr.Dataset
+        self._previous_raster: gv.DynamicMap | None = None
 
         # UI components
         self._main = pn.Column(CHOOSE_FILE)
@@ -187,17 +188,35 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         try:
             # XXX For some reason, which I can't understand
             # Inside this specific callback, the logger requires to be WARN and above...
-            logger.error("Updating main")
+            logger.warning("Updating main")
             self._debug_ui()
 
-            # Since each graph takes up to a few GBs of RAM, before we create
-            # the new graph we should remove the old ones. In order to do so we need to empty
-            # the `_main` column (remember that it contained references to the old/previous
-            # graph) + we explicitly call `gc.collect()` in order to make sure that they are
-            # removed before the creation of the new ones.
-            # Furthermore, we also want to show to the users that something is being computed,
-            # therefore we replace the _main columns contents with a spinner
+            # Since each graph takes up to a few GBs of RAM, before we create the new graph we should remove
+            # the old one. In order to do so we need to remove *all* the references to the old raster. This includes:
+            # - the `_main` column
+            # - the `self._previous_raster`
+
+            # Before removing the old raster, we should retrieve it's Bounding Box
+            # This will allow us to restore the zoom level after re-clicking on the Render button.
+            if self._previous_raster:
+                bbox = api.get_bbox_from_raster(self._previous_raster)
+                x_range = api.get_x_range_from_bbox(bbox)
+                y_range = api.get_y_range_from_bbox(bbox)
+            else:
+                x_range = None
+                y_range = None
+
+            # Now remove the first reference to the old raster
+            self._previous_raster = None
+
+            # We would like to show to the users that something is being computed,
+            # therefore we replace the second reference to the raster (the one in the _main
+            # column) with a spinner
             self._main.objects = [*self._get_spinner().objects]
+
+            # Let's make an explicit call to `gc.collect()`. This will make sure
+            # that the references to the old raster are removed before the creation of the new one,
+            # thus RAM usage should remain low(-ish).
             gc.collect()
 
             # Each time a graph is rendered, data are loaded from the dataset
@@ -215,7 +234,12 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # create plots
             trimesh = api.create_trimesh(ds=ds, variable=variable, timestamp=timestamp, layer=layer)
             tiles = api.get_tiles()
-            raster = api.get_raster(trimesh)  # .opts(width=1200)
+
+            raster = api.get_raster(trimesh=trimesh, x_range=x_range, y_range=y_range)
+
+            # Keep a reference to the previous raster instance.
+            # This one will be used for restoring the zoom level, when we render a new variable
+            self._previous_raster = raster
 
             # Create Colorbar widgets and link them to the raster
             clim_min = pn.widgets.FloatInput(name="Colorbar min")

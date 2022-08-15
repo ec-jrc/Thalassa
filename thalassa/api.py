@@ -53,8 +53,17 @@ def get_tiles() -> gv.Tiles:
     return tiles
 
 
-def get_wireframe(trimesh: gv.TriMesh) -> gv.DynamicMap:
-    wireframe = dynspread(rasterize(trimesh.edgepaths, precompute=True)).opts(tools=[])
+def get_wireframe(
+    trimesh: gv.TriMesh,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
+) -> gv.DynamicMap:
+    kwargs = dict(element=trimesh.edgepaths, precompute=True)
+    if x_range:
+        kwargs["x_range"] = x_range
+    if y_range:
+        kwargs["y_range"] = y_range
+    wireframe = dynspread(rasterize(**kwargs)).opts(tools=[])
     return wireframe
 
 
@@ -64,8 +73,16 @@ def get_raster(
     clabel: str = "",
     clim_min: float | None = None,
     clim_max: float | None = None,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
 ) -> gv.DynamicMap:
-    raster = rasterize(trimesh, precompute=True).opts(
+    kwargs = dict(element=trimesh, precompute=True)
+    if x_range:
+        kwargs["x_range"] = x_range
+    if y_range:
+        kwargs["y_range"] = y_range
+    logger.debug("rasterize kwargs: %s", kwargs)
+    raster = rasterize(**kwargs).opts(
         cmap="viridis",
         clabel=clabel,
         colorbar=True,
@@ -74,6 +91,30 @@ def get_raster(
         tools=["hover"],
     )
     return raster
+
+
+def get_bbox_from_raster(raster: gv.DynamicMap) -> hv.core.boundingregion.BoundingBox:
+    # XXX Even though they seem the same,
+    #       raster[()]
+    # and
+    #       raster.values[0]
+    # are not exactly the same. The latter one throws IndexErrors if you run
+    # it too soon after the creation of the raster!
+    image = raster[()]
+    bbox = image.bounds
+    return bbox
+
+
+def get_x_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+    aarect = bbox.aarect()
+    x_range = (aarect.left(), aarect.right())
+    return x_range
+
+
+def get_y_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+    aarect = bbox.aarect()
+    y_range = (aarect.bottom(), aarect.top())
+    return y_range
 
 
 def is_point_in_the_mesh(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
