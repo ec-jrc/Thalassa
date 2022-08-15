@@ -182,12 +182,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # Add a loading icon while we render the plots
             self._main.loading = True
 
-            # Each time a graph is rendered, data are loaded from the dataset
-            # This increases the RAM usage over time.
-            # In order to avoid this, we re-open the dataset in order to get a Dataset
-            # instance without anyting loaded into memory
-            ds = normalization.normalize_dataset(utils.open_dataset(self.dataset_file.value, load=False))
-
             # Furthermore, since each graph takes up to a few GBs of RAM, before we create
             # the new graph we should remove the old ones. In order to do so we need to empty
             # the `_main` column (remember that it contained references to the old/previous
@@ -196,6 +190,13 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             self._main.objects = []
             self._hidden = None
             gc.collect()
+
+            # Each time a graph is rendered, data are loaded from the dataset
+            # This increases the RAM usage over time. E.g. when loading the second variable,
+            # the first one remains in RAM.
+            # In order to avoid this, we re-open the dataset in order to get a clean Dataset
+            # instance without anything loaded into memory
+            ds = normalization.normalize_dataset(utils.open_dataset(self.dataset_file.value, load=False))
 
             # local variables
             variable = self.variable.value
