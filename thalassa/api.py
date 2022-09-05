@@ -12,12 +12,19 @@ import shapely.wkt
 import xarray as xr
 
 from bokeh.models import HoverTool
+from bokeh.models.formatters import DatetimeTickFormatter
 from holoviews.operation.datashader import dynspread
 from holoviews.operation.datashader import rasterize
 from holoviews.streams import PointerXY
 from holoviews.streams import Tap
 from holoviews.streams import Stream
 
+DTF = DatetimeTickFormatter(
+    hours="%m/%d %H:%M",
+    days="%m/%d %H",
+    months="%Y/%m/%d",
+    years="%Y/%m",
+)
 
 from .utils import get_index_of_nearest_node
 
@@ -172,6 +179,7 @@ def _get_stream_timeseries(
             padding=0.05,
             show_grid=True,
             tools=[hover],
+            xformatter=DTF,
         )
         return plot
 
