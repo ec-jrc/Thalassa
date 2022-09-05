@@ -11,6 +11,7 @@ import pygeos
 import shapely.wkt
 import xarray as xr
 
+from bokeh.models import HoverTool
 from holoviews.operation.datashader import dynspread
 from holoviews.operation.datashader import rasterize
 from holoviews.streams import PointerXY
@@ -154,13 +155,23 @@ def _get_stream_timeseries(
                 variable,
                 range=(ts[variable].min(), ts[variable].max()),
             )
+        # setup hover
+        hover = HoverTool(
+            tooltips=[
+                ("time", "@time{%F %T}"),
+                (f"{variable}", f"@{variable}")
+            ],
+            formatters={
+                "@time": "datetime",
+            },
+        )
         # apply opts
         plot = plot.opts(
             title=title,
             framewise=True,
             padding=0.05,
             show_grid=True,
-            tools=["hover"],
+            tools=[hover],
         )
         return plot
 
