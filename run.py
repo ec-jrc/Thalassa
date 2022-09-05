@@ -1,27 +1,17 @@
 from __future__ import annotations
 
-import logging.config
+import logging
 
 import distributed
 import holoviews as hv
 import panel as pn
 from holoviews import opts as hvopts
-from ruamel.yaml import YAML
-
-import distributed
 
 import thalassa.ui
-
-# load configuration
-yaml = YAML(typ="safe", pure=True)
-
-with open("config.yml", "rb") as fd:
-    config = yaml.load(fd.read())
+from thalassa.utils import setup_logging
 
 # configure logging
-logging.config.dictConfig(config["logging"])
-
-logger = logging.getLogger("thalassa")
+setup_logging()
 
 # load bokeh
 hv.extension("bokeh")
