@@ -144,28 +144,24 @@ def _get_stream_timeseries(
         if not is_point_in_the_mesh(raster=source_raster, lon=x, lat=y):
             # if the point is not inside the mesh, then omit the timeseries
             title = f"Lon={x:.3f} Lat={y:.3f}"
-            plot = hv.Curve([]).opts(
-                title=title,
-                framewise=True,
-                padding=0.1,
-                show_grid=True,
-                tools=["hover"],
-            )
+            plot = hv.Curve([])
         else:
             node_index = get_index_of_nearest_node(ds=ds, lon=x, lat=y)
             ts = ds.isel(node=node_index)
             title = f"Lon={ts.lon.values:.3f} Lat={ts.lat.values:.3f}"
-            plot = (
-                hv.Curve(ts[variable])
-                .redim(variable, range=(ts[variable].min(), ts[variable].max()))
-                .opts(
-                    title=title,
-                    framewise=True,
-                    padding=0.1,
-                    show_grid=True,
-                    tools=["hover"],
-                )
+            plot = hv.Curve(ts[variable])
+            plot = plot.redim(
+                variable,
+                range=(ts[variable].min(), ts[variable].max()),
             )
+        # apply opts
+        plot = plot.opts(
+            title=title,
+            framewise=True,
+            padding=0.05,
+            show_grid=True,
+            tools=["hover"],
+        )
         return plot
 
     stream = stream_class(x=0, y=0, source=source_raster)
