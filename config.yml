@@ -41,15 +41,7 @@ logging:
       propagate: false
       handlers:
         - 'console'
-        - 'file_handler'
-    bokeh:
-      level: 'INFO'
-      handlers:
-        - 'console'
-    requests:
-      level: 'WARNING'
   root:
     level: 'INFO'
     handlers:
       - 'console'
-      - 'file_handler'

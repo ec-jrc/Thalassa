@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import operator
+from functools import reduce
 
 import geopandas as gpd
 import geoviews as gv
@@ -10,27 +12,32 @@ import pandas as pd
 import pygeos
 import shapely.wkt
 import xarray as xr
+import functools
+import panel as pn
 
 from bokeh.models import HoverTool
 from bokeh.models.formatters import DatetimeTickFormatter
+from holoviews import opts as hvopts
 from holoviews.operation.datashader import dynspread
 from holoviews.operation.datashader import rasterize
 from holoviews.streams import PointerXY
 from holoviews.streams import Tap
 from holoviews.streams import Stream
-
-DTF = DatetimeTickFormatter(
-    hours="%m/%d %H:%M",
-    days="%m/%d %H",
-    months="%Y/%m/%d",
-    years="%Y/%m",
-)
+from holoviews.streams import Selection1D
 
 from .utils import get_index_of_nearest_node
 
 logger = logging.getLogger(__name__)
 
-hv.extension("bokeh")
+
+def get_dtf():
+    dtf = DatetimeTickFormatter(
+        hours="%m/%d %H:%M",
+        days="%m/%d %H",
+        months="%Y/%m/%d",
+        years="%Y/%m",
+    )
+    return dtf
 
 
 def create_trimesh(
@@ -179,13 +186,77 @@ def _get_stream_timeseries(
             padding=0.05,
             show_grid=True,
             tools=[hover],
-            xformatter=DTF,
+            xformatter=get_dtf(),
         )
         return plot
 
     stream = stream_class(x=0, y=0, source=source_raster)
     dmap = gv.DynamicMap(callback, streams=[stream])
     return dmap
+
+def get_station_timeseries(
+    stations: xr.Dataset,
+    pins: gv.DynamicMap,
+) -> hv.DynamicMap:
+
+    def callback(index: list[int]) -> hv.Curve:
+        columns = ["stime", "elevation", "time", "observations"]
+        print(index)
+        if not index:
+            title = "No stations selected"
+            ds = pd.DataFrame(columns=columns)
+        else:
+            df = pins.data
+            title = df.iloc[index[0]].location
+            ds = stations.isel(node=df.index[index])[columns]
+        dataset = hv.Dataset(ds)
+        curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elevation"], label='Simulation')
+        curve2 = hv.Curve(dataset, kdims=["time"], vdims=["observations"], label='Observation')
+        components = [curve1, curve2]
+        overlay = reduce(operator.mul, components).opts(
+            hvopts.Curve(
+                padding=0.05,
+                title=title,
+                framewise=True,
+                xlabel='Time',
+                ylabel='Elevation',
+                tools=["hover"],
+                xformatter=get_dtf(),
+            )
+        )
+        return overlay
+    stream = Selection1D(source=pins, index=[])
+    dmap = hv.DynamicMap(callback, streams=[stream])
+    return dmap
+
+
+def get_station_table(
+    stations: xr.Dataset,
+    pins: gv.DynamicMap,
+) -> hv.DynamicMap:
+
+    def callback(index: list[int]) -> hv.Table:
+        if not index:
+            df = pd.DataFrame(columns=["attribute", "value"]).set_index('attribute')
+        else:
+            ds = stations.isel(node=pins.data.index[index])
+            variables = [x for x in ds.variables if ds[x].shape==(1,)]
+            df = ds[variables].to_dataframe().T
+            df.index.name = 'attribute'
+            df.columns = ['value']
+        table = hv.Table(df, kdims=['attribute'])
+        return table
+
+    stream = Selection1D(source=pins, index=[])
+    dmap = hv.DynamicMap(callback, streams=[stream])
+    return dmap
+
+
+def get_station_pins(stations: xr.Dataset) -> gv.Points:
+    df = stations[['lon', 'lat', 'location']].to_dataframe()
+    pins = gv.Points(df, kdims=["lon", "lat"], vdims=["location"])
+    pins = pins.opts(color='red', marker='circle_dot', size=10, tools=["tap", "hover"])
+    return pins
 
 
 def get_tap_timeseries(
@@ -234,7 +305,7 @@ def plot_timeseries(ts: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
     plot = (
         hv.Curve(ts)
         .redim(variable, range=(ts.min(), ts.max()))
-        .opts(title=title, framewise=True, padding=0.1, show_grid=True)
+        .opts(title=title, framewise=True, padding=0.05, show_grid=True)
     )
     return plot
 

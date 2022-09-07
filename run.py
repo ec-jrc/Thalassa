@@ -14,45 +14,49 @@ from thalassa.utils import setup_logging
 setup_logging()
 
 # load bokeh
-hv.extension("bokeh")
-pn.extension(sizing_mode="scale_width")
+# hv.extension("bokeh")
+#pn.extension(sizing_mode="fixed")
+
+pn.config.sizing_mode="fixed"
+#pn.config.sizing_mode="stretch_width"
 
 # Set some defaults for the visualization of the graphs
-hvopts.defaults(
-    hvopts.Curve(  # pylint: disable=no-member
-        height=500,
-        responsive=True,
-        show_title=True,
-        tools=["hover"],
-        active_tools=["pan", "wheel_zoom"],
-        align="end",
-    ),
-    hvopts.Image(  # pylint: disable=no-member
-        # Don't set both height and width, or the UI will not be responsive!
-        # width=800,
-        height=500,
-        responsive=True,
-        show_title=True,
-        tools=["hover"],
-        active_tools=["pan", "wheel_zoom"],
-        align="end",
-    ),
-    hvopts.Layout(toolbar="right"),  # pylint: disable=no-member
-)
+# hvopts.defaults(
+#     hvopts.Table(
+#         height=300,
+#     ),
+#     hvopts.Curve(
+#         responsive=False,
+#         height=300,
+#         show_title=True,
+#         tools=["hover"],
+#         active_tools=["pan", "wheel_zoom"],
+#     ),
+#     hvopts.Image(
+#         height=500,
+#         show_title=True,
+#         tools=["hover"],
+#         active_tools=["pan", "wheel_zoom"],
+#     ),
+# )
 
 
 ui = thalassa.ui.ThalassaUI()
 
 # https://panel.holoviz.org/reference/templates/Bootstrap.html
-bootstrap = pn.template.BootstrapTemplate(
-    site="example.com",
+# bootstrap = pn.template.BootstrapTemplate(
+bootstrap = pn.template.FastListTemplate(
+# bootstrap = pn.template.MaterialTemplate(
+    # site="example.com",
     title="Thalassa",
+    # theme="dark",
     # logo="thalassa/static/logo.png",
     # favicon="thalassa/static/favicon.png",
     sidebar=[ui.sidebar],
-    sidebar_width=350,  # in pixels! must be an integer!
-    # main_max_width="1050px", #  must be a string!
+    # sidebar_width=350,  # in pixels! must be an integer!
+    # main_max_width="1350px", #  must be a string!
     main=[ui.main],
+    #main_layout = "",
 )
 
 _ = bootstrap.servable()

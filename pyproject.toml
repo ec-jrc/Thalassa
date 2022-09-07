@@ -7,22 +7,25 @@ authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
 bokeh = "^2.4"
-Cartopy = "^0.20"
+Cartopy = "^0.21"
 datashader = "^0.14"
+geopandas = "^0.12"
 geoviews = "^1.9"
 holoviews = "^1.15"
+hvplot = "^0.8"
 llvmlite = "^0.39"
 netCDF4 = "^1.6"
 pandas = "^1.4"
-panel = "^0.13"
-pyproj = "^3.3"
+panel = "^0.14"
+# pygeos = "^0.13"
+# pyproj = "^3.3"
 "ruamel.yaml" = "^0.17"
-xarray = "^2022.6"
-geopandas = "^0.11"
 scipy = "^1.9"
-pygeos = {url = "https://github.com/pygeos/pygeos/releases/download/0.12.0/pygeos-0.12.0.tar.gz"}
-shapely = {url = "https://github.com/shapely/shapely/releases/download/1.8.2/Shapely-1.8.2.tar.gz"}
-hvplot = "^0.8.0"
+# shapely = "^1.8"
+pygeos = {url = "https://github.com/pygeos/pygeos/releases/download/0.13/pygeos-0.13.tar.gz"}
+shapely = {url = "https://github.com/shapely/shapely/releases/download/1.8.5.post1/Shapely-1.8.5.post1.tar.gz"}
+xarray = "^2022.6"
+tornado = "<6.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
