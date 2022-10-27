@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 class KNOWN_FORMATS(enum.Enum):
     SCHISM = "SCHISM"
     GENERIC = "GENERIC"
+    PYPOSEIDON = "PYPOSEIDON"
 
 
 _GENERIC_DIMS = {"time", "node", "face", "layer", "max_no_vertices"}
@@ -27,6 +28,13 @@ _SCHISM_DIMS = {
     "nMaxSCHISM_hgrid_face_nodes",
 }
 _SCHISM_VARS = {"SCHISM_hgrid_node_x", "SCHISM_hgrid_node_y", "SCHISM_hgrid_face_nodes"}
+_PYPOSEIDON_DIMS = {
+    "time",
+    "nSCHISM_hgrid_face",
+    "nSCHISM_hgrid_node",
+    "nMaxSCHISM_hgrid_face_nodes",
+}
+_PYPOSEIDON_VARS = {"SCHISM_hgrid_node_x", "SCHISM_hgrid_node_y", "SCHISM_hgrid_face_nodes"}
 
 
 def is_generic(ds: xr.Dataset) -> bool:
@@ -37,9 +45,15 @@ def is_schism(ds: xr.Dataset) -> bool:
     return _SCHISM_DIMS.issubset(ds.dims) and _SCHISM_VARS.issubset(ds.data_vars)
 
 
+def is_pyposeidon(ds: xr.Dataset) -> bool:
+    return _PYPOSEIDON_DIMS.issubset(ds.dims) and _PYPOSEIDON_VARS.issubset(ds.data_vars)
+
+
 def infer_format(ds: xr.Dataset) -> KNOWN_FORMATS:
     if is_schism(ds):
         return KNOWN_FORMATS.SCHISM
+    elif is_pyposeidon(ds):
+        return KNOWN_FORMATS.PYPOSEIDON
     elif is_generic(ds):
         return KNOWN_FORMATS.GENERIC
     else:
@@ -62,15 +76,28 @@ def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
         }
     )
     # SCHISM output uses one-based indices for `face_nodes`
-    # while PyPoseidon uses zero-based indices
     # Let's ensure that we use zero-based indices everywhere.
-    if ds.face_nodes.min().values == 1:
-        ds["face_nodes"] -= 1
+    ds["face_nodes"] -= 1
+    return ds
+
+
+def normalize_pyposeidon(ds: xr.Dataset) -> xr.Dataset:
+    ds = ds.rename(
+        {
+            "nSCHISM_hgrid_face": "face",
+            "nSCHISM_hgrid_node": "node",
+            "SCHISM_hgrid_face_nodes": "face_nodes",
+            "nMaxSCHISM_hgrid_face_nodes": "max_no_vertices",
+            "SCHISM_hgrid_node_x": "lon",
+            "SCHISM_hgrid_node_y": "lat",
+        }
+    )
     return ds
 
 
 NORMALIZE_DISPATCHER = {
     KNOWN_FORMATS.SCHISM: normalize_schism,
+    KNOWN_FORMATS.PYPOSEIDON: normalize_pyposeidon,
     KNOWN_FORMATS.GENERIC: lambda ds: ds,
 }
 
