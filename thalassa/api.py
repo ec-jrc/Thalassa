@@ -171,10 +171,7 @@ def _get_stream_timeseries(
             )
         # setup hover
         hover = HoverTool(
-            tooltips=[
-                ("time", "@time{%F %T}"),
-                (f"{variable}", f"@{variable}")
-            ],
+            tooltips=[("time", "@time{%F %T}"), (f"{variable}", f"@{variable}")],
             formatters={
                 "@time": "datetime",
             },
@@ -194,11 +191,11 @@ def _get_stream_timeseries(
     dmap = gv.DynamicMap(callback, streams=[stream])
     return dmap
 
+
 def get_station_timeseries(
     stations: xr.Dataset,
     pins: gv.DynamicMap,
 ) -> hv.DynamicMap:
-
     def callback(index: list[int]) -> hv.Curve:
         # sometimes there are multiple pins with the same lon/lat
         # When one of these pins gets selected index contains the indices of both pins
@@ -217,24 +214,26 @@ def get_station_timeseries(
             title = df.iloc[index[0]].location
             ds = stations.isel(node=df.index[index])[columns]
         dataset = hv.Dataset(ds)
-        curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elev_sim"], label='Simulation')
-        curve2 = hv.Curve(dataset, kdims=["time"], vdims=["elev_obs"], label='Observation')
+        curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elev_sim"], label="Simulation")
+        curve2 = hv.Curve(dataset, kdims=["time"], vdims=["elev_obs"], label="Observation")
         components = [curve1, curve2]
         overlay = reduce(operator.mul, components).opts(
             hvopts.Curve(
                 padding=0.05,
                 title=title,
                 framewise=True,
-                xlabel='Time',
-                ylabel='Elevation',
+                xlabel="Time",
+                ylabel="Elevation",
                 tools=["hover"],
                 xformatter=get_dtf(),
             )
         )
         return overlay
+
     stream = Selection1D(source=pins, index=[])
     dmap = hv.DynamicMap(callback, streams=[stream])
     return dmap
+
 
 _STATION_VARIABLES = [
     "ioc_code",
@@ -250,7 +249,7 @@ _STATION_VARIABLES = [
     "Correlation Coefficient",
     "R^2",
     "Nash-Sutcliffe Coefficient",
-    "lamda index"
+    "lamda index",
 ]
 
 
@@ -258,7 +257,6 @@ def get_station_table(
     stations: xr.Dataset,
     pins: gv.DynamicMap,
 ) -> hv.DynamicMap:
-
     def callback(index: list[int]) -> hv.Table:
         # sometimes there are multiple pins with the same lon/lat
         # When one of these pins gets selected index contains the indices of both pins
@@ -269,13 +267,13 @@ def get_station_table(
             index = [index[0]]
         logger.warning("ST: Choosing the first one: %r", index)
         if not index:
-            df = pd.DataFrame(columns=["attribute", "value"]).set_index('attribute')
+            df = pd.DataFrame(columns=["attribute", "value"]).set_index("attribute")
         else:
             ds = stations.isel(node=pins.data.index[index])
             df = ds[_STATION_VARIABLES].to_dataframe().T
-            df.index.name = 'attribute'
-            df.columns = ['value']
-        table = hv.Table(df, kdims=['attribute'])
+            df.index.name = "attribute"
+            df.columns = ["value"]
+        table = hv.Table(df, kdims=["attribute"])
         return table
 
     stream = Selection1D(source=pins, index=[])
@@ -284,9 +282,9 @@ def get_station_table(
 
 
 def get_station_pins(stations: xr.Dataset) -> gv.Points:
-    df = stations[['lon', 'lat', 'location']].to_dataframe()
+    df = stations[["lon", "lat", "location"]].to_dataframe()
     pins = gv.Points(df, kdims=["lon", "lat"], vdims=["location"])
-    pins = pins.opts(color='red', marker='circle_dot', size=10, tools=["tap", "hover"])
+    pins = pins.opts(color="red", marker="circle_dot", size=10, tools=["tap", "hover"])
     return pins
 
 

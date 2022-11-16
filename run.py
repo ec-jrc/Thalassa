@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-import distributed
 import holoviews as hv
 import panel as pn
 from holoviews import opts as hvopts
@@ -15,10 +14,11 @@ setup_logging()
 
 # load bokeh
 # hv.extension("bokeh")
-#pn.extension(sizing_mode="fixed")
+# pn.extension(sizing_mode="fixed")
 
-pn.config.sizing_mode="fixed"
-#pn.config.sizing_mode="stretch_width"
+# pn.config.sizing_mode="fixed"
+# pn.config.sizing_mode="stretch_width"
+# pn.config.sizing_mode="scale_width"
 
 # Set some defaults for the visualization of the graphs
 # hvopts.defaults(
@@ -44,9 +44,10 @@ pn.config.sizing_mode="fixed"
 ui = thalassa.ui.ThalassaUI()
 
 # https://panel.holoviz.org/reference/templates/Bootstrap.html
-# bootstrap = pn.template.BootstrapTemplate(
-bootstrap = pn.template.FastListTemplate(
-# bootstrap = pn.template.MaterialTemplate(
+bootstrap = pn.template.ReactTemplate(
+    # bootstrap = pn.template.BootstrapTemplate(
+    # bootstrap = pn.template.FastListTemplate(
+    # bootstrap = pn.template.MaterialTemplate(
     # site="example.com",
     title="Thalassa",
     # theme="dark",
@@ -56,7 +57,7 @@ bootstrap = pn.template.FastListTemplate(
     # sidebar_width=350,  # in pixels! must be an integer!
     # main_max_width="1350px", #  must be a string!
     main=[ui.main],
-    #main_layout = "",
+    # main_layout = "",
 )
 
 _ = bootstrap.servable()

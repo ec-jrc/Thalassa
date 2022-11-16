@@ -25,7 +25,7 @@ logger.error(logger.handlers)
 DATA_DIR = "./data/"
 DATA_GLOB = DATA_DIR + os.path.sep + "*"
 
-MAIN_WIDTH = 1450
+MAIN_WIDTH = 1200
 
 
 MISSING_DATA_DIR = pn.pane.Alert(
@@ -50,7 +50,12 @@ PLEASE_RENDER = pn.pane.Alert(
 )
 
 
-def choose_initial_message() -> pn.pane.Alert:
+# Create a custom FloatInput without a spinner
+class FloatInputNoSpinner(pn.widgets.input._FloatInputBase):
+    pass
+
+
+def choose_info_message() -> pn.pane.Alert:
     if not pathlib.Path(DATA_DIR).is_dir():
         message = MISSING_DATA_DIR
     elif not sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB))):
@@ -60,9 +65,64 @@ def choose_initial_message() -> pn.pane.Alert:
     return pn.Row(message, width=MAIN_WIDTH, sizing_mode="scale_width")
 
 
-# Create a custom FloatInput without a spinner
-class FloatInputNoSpinner(pn.widgets.input._FloatInputBase):
-    pass
+def get_spinner() -> pn.Column:
+    """Return a `pn.Column` with an horizontally/vertically aligned spinner."""
+    column = pn.Column(
+        pn.layout.Spacer(height=50),
+        pn.Row(
+            pn.layout.Spacer(width=MAIN_WIDTH // 2 - 100),
+            pn.Row(pn.indicators.LoadingSpinner(value=True, width=150, height=150)),
+        ),
+        pn.layout.Spacer(height=50),
+    )
+    return column
+
+
+def get_colorbar_row(raster: gv.DynamicMap) -> pn.Row:
+    clim_min = FloatInputNoSpinner(name="min")
+    clim_max = FloatInputNoSpinner(name="max")
+    clim_apply = pn.widgets.Button(name="Apply", button_type="primary", align="end")
+    clim_reset = pn.widgets.Button(name="reset", button_type="primary", align="end")
+    # Set Input widgets JS callbacks
+    clim_min.jslink(raster, value="color_mapper.low")
+    clim_max.jslink(raster, value="color_mapper.high")
+    # Set button JS callbacks
+    clim_apply.jscallback(
+        clicks="""
+            console.log(clim_min.value)
+            console.log(clim_max.value)
+            console.log(raster.right[0].color_mapper.low)
+            console.log(raster.right[0].color_mapper.high)
+            raster.right[0].color_mapper.low = clim_min.value
+            raster.right[0].color_mapper.high = clim_max.value
+            raster.right[0].color_mapper.change.emit()
+        """,
+        args={"raster": raster, "clim_min": clim_min, "clim_max": clim_max},
+    )
+    clim_reset.jscallback(
+        clicks="""
+            //clim_min.value = null
+            //clim_max.value = null
+            raster.right[0].color_mapper.low = null
+            raster.right[0].color_mapper.high = null
+            raster.right[0].color_mapper.change.emit()
+        """,
+        args={"raster": raster, "clim_min": clim_min, "clim_max": clim_max},
+    )
+    spacer = pn.layout.HSpacer()
+    row = pn.Row(
+        clim_min,
+        clim_max,
+        *[spacer] * 2,
+        clim_apply,
+        clim_reset,
+        width=MAIN_WIDTH,
+    )
+    return row
+
+
+SIDEBAR_WIDTH = 300
+SIDEBAR_HALF = SIDEBAR_WIDTH // 2
 
 
 class ThalassaUI:  # pylint: disable=too-many-instance-attributes
@@ -80,13 +140,18 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self) -> None:
         self._dataset: xr.Dataset
-        self._tiles: gv.Tiles = api.get_tiles()
+        self._tiles: gv.Tiles = api.get_tiles().opts(frame_width=800, aspect=3 / 2)
         self._mesh: gv.DynamicMap | None = None
         self._raster: gv.DynamicMap | None = None
+        self._stations: xr.Dataset | None = None
 
         # UI components
-        self._main = pn.Column(CHOOSE_FILE, width=MAIN_WIDTH, sizing_mode="fixed")
-        self._sidebar = pn.Column(sizing_mode="stretch_width")
+        # self._main = pn.Column(CHOOSE_FILE, width=MAIN_WIDTH, sizing_mode="fixed")
+        self._main = pn.Column(
+            CHOOSE_FILE, sizing_mode="scale_width"
+        )  # , width=MAIN_WIDTH)#, sizing_mode="stretch_width")
+        self._sidebar = pn.Column(sizing_mode="fixed", width=SIDEBAR_WIDTH)
+        # self._sidebar = pn.Column()
 
         # Define widgets
         self.dataset_file = pn.widgets.Select(
@@ -96,34 +161,43 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.variable = pn.widgets.Select(name="Variable")
         self.layer = pn.widgets.Select(name="Layer")
         self.time = pn.widgets.Select(name="Time")
-        self.keep_zoom = pn.widgets.Checkbox(name="Keep Zoom", value=True)
-        self.show_mesh = pn.widgets.Checkbox(name="Show Mesh")
-        self.show_timeseries = pn.widgets.Checkbox(name="Show Timeseries")
-        self.show_stations = pn.widgets.Checkbox(name="Show Stations")
-        self.render_button = pn.widgets.Button(name="Render", button_type="primary")
+        self.keep_zoom = pn.widgets.Checkbox(name="Keep Zoom", value=True, width=SIDEBAR_HALF)
+        self.show_mesh = pn.widgets.Checkbox(name="Overlay Mesh", width=SIDEBAR_HALF)
+        self.show_timeseries = pn.widgets.Checkbox(name="Show Timeseries", width=SIDEBAR_HALF)
+        self.show_stations = pn.widgets.Checkbox(name="Show Stations", width=SIDEBAR_HALF)
+        self.show_animation = pn.widgets.Checkbox(name="Show animation", width=SIDEBAR_HALF)
+        self.render_button = pn.widgets.Button(
+            name="Render", button_type="primary", sizing_mode="scale_width"
+        )
 
         # Setup UI
-        self._sidebar.append(
+        self.sidebar.append(
             pn.WidgetBox(
                 self.dataset_file,
                 self.variable,
                 self.layer,
                 self.time,
-                pn.Row(self.keep_zoom, self.show_mesh, sizing_mode="stretch_width"),
-                pn.Row(self.show_timeseries, self.show_stations, sizing_mode="stretch_width"),
-                sizing_mode="stretch_width",
+                pn.Row(self.keep_zoom, self.show_mesh),
+                pn.layout.VSpacer(),
+                pn.layout.VSpacer(),
+                self.show_timeseries,
+                self.show_stations,
+                self.show_animation,
+                self.render_button,
             )
         )
-        self._sidebar.append(self.render_button)
         logger.debug("UI setup: done")
 
         # Define callback
         self.dataset_file.param.watch(fn=self._update_dataset_file, parameter_names="value")
         self.variable.param.watch(fn=self._on_variable_change, parameter_names="value")
+        self.show_timeseries.param.watch(fn=self._on_show_timeseries_clicked, parameter_names="value")
+        self.show_stations.param.watch(fn=self._on_show_stations_clicked, parameter_names="value")
+        self.show_animation.param.watch(fn=self._on_show_animation_clicked, parameter_names="value")
         self.render_button.on_click(callback=self._update_main)
         logger.debug("Callback definitions: done")
 
-        self._reset_ui(message=choose_initial_message())
+        self._reset_ui(message=choose_info_message())
 
     def _reset_ui(self, message: pn.pane.Alert) -> None:
         self.variable.param.set_param(options=[], disabled=True)
@@ -133,16 +207,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.show_mesh.param.set_param(disabled=True)
         self.show_timeseries.param.set_param(disabled=True)
         self.show_stations.param.set_param(disabled=True)
+        self.show_animation.param.set_param(disabled=True)
         self.render_button.param.set_param(disabled=True)
         self._main.objects = [message]
         self._mesh = None
         self._raster = None
 
     def _update_dataset_file(self, event: param.Event) -> None:
-        logger.debug(event)
-        # local variables
         dataset_file = self.dataset_file.value
-
         if not dataset_file:
             logger.debug("No dataset has been selected. Resetting the UI.")
             self._reset_ui(message=CHOOSE_FILE)
@@ -161,8 +233,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                 self.variable.param.set_param(options=variables, value=variables[0], disabled=False)
                 self.keep_zoom.param.set_param(disabled=False)
                 self.show_mesh.param.set_param(disabled=False)
-                self.show_stations.param.set_param(disabled=False)
-                # self.show_timeseries.param.set_param(disabled=False)
+                if pathlib.Path(dataset_file).with_stem("fskill").is_file():
+                    self.show_stations.param.set_param(disabled=False)
+                # If there is a corresponding video, then enable the show video widget
+                if pathlib.Path(dataset_file).with_suffix(".mp4").is_file():
+                    logger.error(str(pathlib.Path(dataset_file).with_suffix(".mp4")))
+                    logger.error(str(pathlib.Path(dataset_file).with_suffix(".mp4").is_file()))
+                    logger.error("activate animation")
+                    self.show_animation.param.set_param(disabled=False)
                 self._main.objects = [PLEASE_RENDER]
 
     def _on_variable_change(self, event: param.Event) -> None:
@@ -173,78 +251,41 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # handle layer
             if variable and "layer" in ds[variable].dims:
                 layers = ds.layer.values.tolist()
-                self.layer.disabled = False
-                self.layer.param.set_param(options=layers)  # , value=layers[0])
+                self.layer.param.set_param(options=layers, disabled=False)
             else:
-                self.layer.param.set_param(options=[])
-                self.layer.disabled = True
+                self.layer.param.set_param(options=[], disabled=True)
             # handle time
             if variable and "time" in ds[variable].dims:
-                self.show_timeseries.disabled = False
-                self.time.disabled = False
-                self.time.param.set_param(options=["max"] + list(ds.time.values))
+                self.show_timeseries.param.set_param(disabled=False)
+                self.time.param.set_param(options=["max"] + list(ds.time.values), disabled=False)
             else:
-                self.show_timeseries.disabled = True
-                self.time.disabled = True
-                self.time.param.set_param(options=[])
+                self.show_timeseries.param.set_param(disabled=True)
+                self.time.param.set_param(options=[], disabled=True)
             self.render_button.param.set_param(disabled=False)
         except:
             logger.exception("error layer")
+
+    # Make `show_*` Radio boxes mutually exclusive
+    def _on_show_timeseries_clicked(self, event: param.Event) -> None:
+        if self.show_timeseries.value:
+            self.show_animation.param.set_param(value=False)
+            self.show_stations.param.set_param(value=False)
+
+    def _on_show_stations_clicked(self, event: param.Event) -> None:
+        if self.show_stations.value:
+            self.show_timeseries.param.set_param(value=False)
+            self.show_animation.param.set_param(value=False)
+
+    def _on_show_animation_clicked(self, event: param.Event) -> None:
+        if self.show_animation.value:
+            self.show_timeseries.param.set_param(value=False)
+            self.show_stations.param.set_param(value=False)
 
     def _debug_ui(self) -> None:
         logger.info("Widget values:")
         widgets = [obj for (name, obj) in self.__dict__.items() if isinstance(obj, pn.widgets.Widget)]
         for widget in widgets:
             logger.error("%s: %s", widget.name, widget.value)
-
-    def _get_spinner(self) -> pn.Column:
-        """Return a `pn.Column` with an horizontally/vertically aligned spinner."""
-        column = pn.Column(
-            pn.layout.Spacer(height=100),
-            pn.Row(
-                pn.layout.HSpacer(),
-                pn.Row(pn.indicators.LoadingSpinner(value=True, width=150, height=150)),
-            ),
-        )
-        return column
-
-    def _get_colorbar_row(self, raster: gv.DynamicMap) -> pn.Row:
-        clim_min = FloatInputNoSpinner(name="min")
-        clim_max = FloatInputNoSpinner(name="max")
-        clim_apply = pn.widgets.Button(name="Apply", button_type="primary", align="end")
-        clim_reset = pn.widgets.Button(name="reset", button_type="primary", align="end")
-        # Set Input widgets JS callbacks
-        clim_min.jslink(raster, value="color_mapper.low")
-        clim_max.jslink(raster, value="color_mapper.high")
-        # Set button JS callbacks
-        clim_apply.jscallback(
-            clicks="""
-                console.log(clim_min.value)
-                console.log(clim_max.value)
-                console.log(raster.right[0].color_mapper.low)
-                console.log(raster.right[0].color_mapper.high)
-                raster.right[0].color_mapper.low = clim_min.value
-                raster.right[0].color_mapper.high = clim_max.value
-                raster.right[0].color_mapper.change.emit()
-            """,
-            args={"raster": raster, "clim_min": clim_min, "clim_max": clim_max},
-        )
-        clim_reset.jscallback(
-            clicks="""
-                //clim_min.value = null
-                //clim_max.value = null
-                raster.right[0].color_mapper.low = null
-                raster.right[0].color_mapper.high = null
-                raster.right[0].color_mapper.change.emit()
-            """,
-            args={"raster": raster, "clim_min": clim_min, "clim_max": clim_max},
-        )
-        spacer =pn.layout.HSpacer()
-        row = pn.Row(
-            clim_min, clim_max, *[spacer] * 2, clim_apply, clim_reset,
-            width=MAIN_WIDTH,
-        )
-        return row
 
     def _update_main(self, event: param.Event) -> None:
         try:
@@ -256,7 +297,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # First of all, retrieve the lon and lat ranges of the previous plot (if there is one)
             # This will allow us to restore the zoom level after re-clicking on the Render button.
             if self.keep_zoom.value and self._raster:
-                print(self._raster.streams)
                 lon_range = self._raster.range("lon")
                 lat_range = self._raster.range("lat")
             else:
@@ -272,7 +312,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # happening behind the scenes
             self._main_plot = None
             self._raster = None
-            self._main.objects = [*self._get_spinner().objects]
+            self._main.objects = [*get_spinner().objects]
 
             # Now let's make an explicit call to `gc.collect()`. This will make sure
             # that the references to the old raster are really removed before the creation
@@ -294,29 +334,32 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # create plots
             # What we do here needs some explaining.
             # A prerequisite for generating the DynamicMaps is to create the trimesh.
-            # The trimesh is needed for the wireframe and the raster.
+            # The trimesh is needed for both the wireframe and the raster.
             # No matter what widget we change (variable, timestamp, layer), we need to generate
-            # a new trimesh object. This is why the trimesh is a local variable.
+            # a new trimesh object. This is why the trimesh is a local variable and not an
+            # instance attribute (which would be cached)
             trimesh = api.create_trimesh(ds=ds, variable=variable, timestamp=timestamp, layer=layer)
 
             # The wireframe is not always needed + it is always the same regardless of the variable.
             # So, we will generate it on the fly the first time we need it.
-            # Therefore, we store it as an instance attribute in order to reuse it in subsequent renderings
+            # Therefore, we store it as an instance attribute in order to reuse it in future renders
             if self.show_mesh.value and self._mesh is None:
                 self._mesh = api.get_wireframe(trimesh=trimesh, x_range=lon_range, y_range=lat_range)
 
-            # The raster needs to be stored as an instance variable, too, because we want to
-            # be able to restore the zoom level when we change the variable
+            # The raster needs to be stored as an instance attribute, too, because we want to
+            # be able to restore the zoom level whenever we re-render
             self._raster = api.get_raster(trimesh=trimesh, x_range=lon_range, y_range=lat_range)
-            self._raster = self._raster.opts(width=MAIN_WIDTH, height=600)
 
             # In order to control dynamically the ColorBar of the raster we create
             # a `panel.Row` with extra widgets
-            cbar_row = self._get_colorbar_row(raster=self._raster)
+            cbar_row = get_colorbar_row(raster=self._raster)
 
             # Construct the list of objects that will be part of the main overlay
+            # Depending on the choices of the user, this list may be populated with
+            # additional items later
             main_overlay_components = [self._tiles, self._raster]
 
+            # Render the wireframe if necessary
             if self.show_mesh.value:
                 main_overlay_components.append(self._mesh)
 
@@ -326,34 +369,55 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # the rendable objects
             stations_row = None
             ts_plot = None
+            animation_row = None
 
+            # Render the stations if necessary
             if self.show_stations.value:
-                stations = xr.open_dataset(DATA_DIR + 'fskill.nc')
+                # XXX fskill.nc is hardcoded!
+                stations = xr.open_dataset(DATA_DIR + "fskill.nc", cache=False)
                 station_pins = api.get_station_pins(stations=stations)
-                station_ts = api.get_station_timeseries(
-                    stations=stations,
-                    pins=station_pins
-                ).opts(width=MAIN_WIDTH // 2)
-                station_info = api.get_station_table(
-                    stations=stations,
-                    pins=station_pins,
-                ).opts(width=MAIN_WIDTH // 2)
-                stations_row = pn.Row(station_ts, station_info, sizing_mode="scale_width", width=MAIN_WIDTH)
+                station_ts = api.get_station_timeseries(stations=stations, pins=station_pins)
+                station_info = api.get_station_table(stations=stations, pins=station_pins)
+                stations_row = pn.Column(
+                    station_ts.opts(width=MAIN_WIDTH // 2),
+                    station_info,
+                    width=MAIN_WIDTH,
+                    sizing_mode="scale_width",
+                )
                 main_overlay_components.append(station_pins)
 
+            # Render the timeseries if necessary
             if self.show_timeseries.value:
-                ts_plot = api.get_tap_timeseries(ds=ds, variable=variable, source_raster=self._raster, layer=layer)
-                ts_plot = ts_plot.opts(width=MAIN_WIDTH)
+                ts_plot = api.get_tap_timeseries(
+                    ds=ds,
+                    variable=variable,
+                    source_raster=self._raster,
+                    layer=layer,
+                )
+
+            if self.show_animation.value:
+                mp4 = str(pathlib.Path(self.dataset_file.value).with_suffix(".mp4"))
+                animation_row = pn.Row(
+                    pn.pane.Video(mp4),
+                    width=MAIN_WIDTH,
+                    sizing_mode="scale_width",
+                )
 
             main_overlay = reduce(operator.mul, main_overlay_components)
-            main_row = pn.Row(main_overlay, width=MAIN_WIDTH, sizing_mode="stretch_width")
+            # main_row = pn.Row(main_overlay, min_width=MAIN_WIDTH, sizing_mode="scale_both")
+            # main_row = pn.Row(main_overlay, sizing_mode="stretch_width")
+            main_row = main_overlay
 
             # For the record, (and this is probably a panel bug), if we use
             #     self._main.append(ts_plot)
             # then the timeseries plot does not get updated each time we click on the
             # DynamicMap. By replacing the `objects` though, then the updates work fine.
             self._main.clear()
-            self._main.objects = [cbar_row, main_row, stations_row, ts_plot]
+            self._main.objects = [
+                row for row in (cbar_row, main_row, stations_row, ts_plot, animation_row) if row is not None
+            ]
+            # self._main.objects = [row for row in (cbar_row, main_row)]#, stations_row, ts_plot, animation_row) if row is not None]
+            # self._main.objects = [cbar_row, pn.Row(self._tiles * self._raster)]
 
         except:
             logger.exception("Something went wrong")
