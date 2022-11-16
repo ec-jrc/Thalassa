@@ -200,8 +200,8 @@ def get_station_timeseries(
 ) -> hv.DynamicMap:
 
     def callback(index: list[int]) -> hv.Curve:
-        columns = ["stime", "elevation", "time", "observations"]
         print(index)
+        columns = ["stime", "elev_sim", "time", "elev_obs"]
         if not index:
             title = "No stations selected"
             ds = pd.DataFrame(columns=columns)
@@ -210,8 +210,8 @@ def get_station_timeseries(
             title = df.iloc[index[0]].location
             ds = stations.isel(node=df.index[index])[columns]
         dataset = hv.Dataset(ds)
-        curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elevation"], label='Simulation')
-        curve2 = hv.Curve(dataset, kdims=["time"], vdims=["observations"], label='Observation')
+        curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elev_sim"], label='Simulation')
+        curve2 = hv.Curve(dataset, kdims=["time"], vdims=["elev_obs"], label='Observation')
         components = [curve1, curve2]
         overlay = reduce(operator.mul, components).opts(
             hvopts.Curve(
