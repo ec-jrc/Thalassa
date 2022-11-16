@@ -200,7 +200,14 @@ def get_station_timeseries(
 ) -> hv.DynamicMap:
 
     def callback(index: list[int]) -> hv.Curve:
-        print(index)
+        # sometimes there are multiple pins with the same lon/lat
+        # When one of these pins gets selected index contains the indices of both pins
+        # This causes an exception to be raised.
+        # TODO: Until we decide how to resolve this, we just pick the first pin, no matter what.
+        if len(index) >= 2:
+            logger.warning("TS: multiple pins selected: %r", index)
+            index = [index[0]]
+        logger.warning("TS: Choosing the first one: %r", index)
         columns = ["stime", "elev_sim", "time", "elev_obs"]
         if not index:
             title = "No stations selected"
@@ -253,6 +260,14 @@ def get_station_table(
 ) -> hv.DynamicMap:
 
     def callback(index: list[int]) -> hv.Table:
+        # sometimes there are multiple pins with the same lon/lat
+        # When one of these pins gets selected index contains the indices of both pins
+        # This causes an exception to be raised.
+        # TODO: Until we decide how to resolve this, we just pick the first pin, no matter what.
+        if len(index) >= 2:
+            logger.warning("ST: multiple pins selected: %r", index)
+            index = [index[0]]
+        logger.warning("ST: Choosing the first one: %r", index)
         if not index:
             df = pd.DataFrame(columns=["attribute", "value"]).set_index('attribute')
         else:
