@@ -229,6 +229,23 @@ def get_station_timeseries(
     dmap = hv.DynamicMap(callback, streams=[stream])
     return dmap
 
+_STATION_VARIABLES = [
+    "ioc_code",
+    "lat",
+    "lon",
+    "location",
+    "Mean Absolute Error",
+    "RMSE",
+    "Scatter Index",
+    "percentage RMSE",
+    "BIAS or mean error",
+    "Standard deviation of residuals",
+    "Correlation Coefficient",
+    "R^2",
+    "Nash-Sutcliffe Coefficient",
+    "lamda index"
+]
+
 
 def get_station_table(
     stations: xr.Dataset,
@@ -240,8 +257,7 @@ def get_station_table(
             df = pd.DataFrame(columns=["attribute", "value"]).set_index('attribute')
         else:
             ds = stations.isel(node=pins.data.index[index])
-            variables = [x for x in ds.variables if ds[x].shape==(1,)]
-            df = ds[variables].to_dataframe().T
+            df = ds[_STATION_VARIABLES].to_dataframe().T
             df.index.name = 'attribute'
             df.columns = ['value']
         table = hv.Table(df, kdims=['attribute'])
