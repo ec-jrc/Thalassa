@@ -4,8 +4,8 @@ list:
 
 lock:
 	poetry lock --no-update
-	poetry export --without-hashes --output requirements/requirements.txt
-	poetry export --without-hashes --dev --output requirements/requirements-dev.txt
+	poetry export --output requirements/requirements.txt
+	poetry export --with dev --output requirements/requirements-dev.txt
 
 build:
 	docker/build.sh

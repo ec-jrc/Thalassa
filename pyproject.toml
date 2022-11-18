@@ -17,15 +17,12 @@ llvmlite = "^0.39"
 netCDF4 = "^1.6"
 pandas = "^1.4"
 panel = "^0.14"
-# pygeos = "^0.13"
-# pyproj = "^3.3"
+pygeos = "^0.13"
 "ruamel.yaml" = "^0.17"
 scipy = "^1.9"
-# shapely = "^1.8"
-pygeos = {url = "https://github.com/pygeos/pygeos/releases/download/0.13/pygeos-0.13.tar.gz"}
-shapely = {url = "https://github.com/shapely/shapely/releases/download/1.8.5.post1/Shapely-1.8.5.post1.tar.gz"}
-xarray = "^2022.6"
+shapely = "^1.8"
 tornado = "<6.2"
+xarray = "^2022.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "*"
