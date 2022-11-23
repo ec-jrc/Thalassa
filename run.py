@@ -60,4 +60,19 @@ bootstrap = pn.template.ReactTemplate(
     # main_layout = "",
 )
 
+bootstrap.header_background="#2A6589"
+bootstrap.sidebar.append(
+    pn.Column(
+        # pn.layout.VSpacer(height=100),
+        pn.layout.VSpacer(),
+        pn.pane.Markdown('''
+        Powered by:
+        <a href="https://github.com/ec-jrc/pyPoseidon/" style="color: #752A89" target="blank">pyPoseidon</a>
+        <a href="https://github.com/ec-jrc/Thalassa/" style="color: #752A89" target="blank">Thalassa</a>
+        <a href="http://ccrm.vims.edu/schismweb/" style="color: #752A89" target="blank">SCHISM</a>
+        '''),
+        # pn.layout.VSpacer(height=100),
+    )
+)
+
 _ = bootstrap.servable()
