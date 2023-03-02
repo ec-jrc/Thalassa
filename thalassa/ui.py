@@ -1,3 +1,4 @@
+# mypy: disable-error-code=no-untyped-call
 from __future__ import annotations
 
 import gc
@@ -9,14 +10,13 @@ import pathlib
 from functools import reduce
 
 import geoviews as gv
-import holoviews as hv
 import panel as pn
 import param
 import xarray as xr
 
 from . import api
-from . import utils
 from . import normalization
+from . import utils
 
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,6 @@ logger.error(logger.handlers)
 
 DATA_DIR = "./data/"
 DATA_GLOB = DATA_DIR + os.path.sep + "*"
-
-MAIN_WIDTH = 1200
-
 
 MISSING_DATA_DIR = pn.pane.Alert(
     f"## Directory <{DATA_DIR}> is missing. Please create it and add some suitable netcdf files.",
@@ -41,13 +38,19 @@ CHOOSE_FILE = pn.pane.Alert(
     alert_type="info",
 )
 UNKNOWN_FORMAT = pn.pane.Alert(
-    f"## The selected dataset is in an unknown format. Please choose a different file.",
+    "## The selected dataset is in an unknown format. Please choose a different file.",
     alert_type="danger",
 )
 PLEASE_RENDER = pn.pane.Alert(
-    f"## Please click on the **Render** button to visualize the selected *Variable*",
+    "## Please click on the **Render** button to visualize the selected *Variable*",
     alert_type="info",
 )
+
+
+# Python3.8 does not support pathlib.Path.with_stem()
+def with_stem(path: pathlib.Path, stem: str) -> pathlib.Path:
+    """Return a new path with the stem changed."""
+    return path.with_name(stem + path.suffix)
 
 
 # Create a custom FloatInput without a spinner
@@ -62,7 +65,7 @@ def choose_info_message() -> pn.pane.Alert:
         message = EMPTY_DATA_DIR
     else:
         message = CHOOSE_FILE
-    return pn.Row(message, width=MAIN_WIDTH, sizing_mode="scale_width")
+    return pn.Row(message, width_policy="fit")
 
 
 def get_spinner() -> pn.Column:
@@ -70,10 +73,11 @@ def get_spinner() -> pn.Column:
     column = pn.Column(
         pn.layout.Spacer(height=50),
         pn.Row(
-            pn.layout.Spacer(width=MAIN_WIDTH // 2 - 100),
+            pn.layout.HSpacer(),
             pn.Row(pn.indicators.LoadingSpinner(value=True, width=150, height=150)),
+            pn.layout.HSpacer(),
+            width_policy="fit",
         ),
-        pn.layout.Spacer(height=50),
     )
     return column
 
@@ -116,13 +120,8 @@ def get_colorbar_row(raster: gv.DynamicMap) -> pn.Row:
         *[spacer] * 2,
         clim_apply,
         clim_reset,
-        width=MAIN_WIDTH,
     )
     return row
-
-
-SIDEBAR_WIDTH = 300
-SIDEBAR_HALF = SIDEBAR_WIDTH // 2
 
 
 class ThalassaUI:  # pylint: disable=too-many-instance-attributes
@@ -140,18 +139,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
 
     def __init__(self) -> None:
         self._dataset: xr.Dataset
-        self._tiles: gv.Tiles = api.get_tiles().opts(frame_width=800, aspect=3 / 2)
+        self._tiles: gv.Tiles = api.get_tiles()
         self._mesh: gv.DynamicMap | None = None
         self._raster: gv.DynamicMap | None = None
         self._stations: xr.Dataset | None = None
 
         # UI components
-        # self._main = pn.Column(CHOOSE_FILE, width=MAIN_WIDTH, sizing_mode="fixed")
-        self._main = pn.Column(
-            CHOOSE_FILE, sizing_mode="scale_width"
-        )  # , width=MAIN_WIDTH)#, sizing_mode="stretch_width")
-        self._sidebar = pn.Column(sizing_mode="fixed", width=SIDEBAR_WIDTH)
-        # self._sidebar = pn.Column()
+        self._main = pn.Column(CHOOSE_FILE, sizing_mode="scale_width")
+        self._sidebar = pn.Column()
 
         # Define widgets
         self.dataset_file = pn.widgets.Select(
@@ -161,28 +156,31 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self.variable = pn.widgets.Select(name="Variable")
         self.layer = pn.widgets.Select(name="Layer")
         self.time = pn.widgets.Select(name="Time")
-        self.keep_zoom = pn.widgets.Checkbox(name="Keep Zoom", value=True, width=SIDEBAR_HALF)
-        self.show_mesh = pn.widgets.Checkbox(name="Overlay Mesh", width=SIDEBAR_HALF)
-        self.show_timeseries = pn.widgets.Checkbox(name="Show Timeseries", width=SIDEBAR_HALF)
-        self.show_stations = pn.widgets.Checkbox(name="Show Stations", width=SIDEBAR_HALF)
-        self.show_animation = pn.widgets.Checkbox(name="Show animation", width=SIDEBAR_HALF)
-        self.render_button = pn.widgets.Button(
-            name="Render", button_type="primary", sizing_mode="scale_width"
-        )
+        self.keep_zoom = pn.widgets.Checkbox(name="Keep Zoom", value=True)
+        self.show_mesh = pn.widgets.Checkbox(name="Overlay Mesh")
+        self.show_timeseries = pn.widgets.Checkbox(name="Show Timeseries")
+        self.show_stations = pn.widgets.Checkbox(name="Show Stations")
+        self.show_animation = pn.widgets.Checkbox(name="Show animation")
+        self.render_button = pn.widgets.Button(name="Render", button_type="primary")
 
         # Setup UI
-        self.sidebar.append(
-            pn.WidgetBox(
-                self.dataset_file,
-                self.variable,
-                self.layer,
-                self.time,
-                pn.Row(self.keep_zoom, self.show_mesh),
-                pn.layout.VSpacer(),
-                pn.layout.VSpacer(),
-                self.show_timeseries,
-                self.show_stations,
-                self.show_animation,
+        self._sidebar.append(
+            pn.Column(
+                pn.WidgetBox(
+                    # "##### Dataset",
+                    self.dataset_file,
+                    self.variable,
+                    self.layer,
+                    self.time,
+                    self.keep_zoom,
+                    self.show_mesh,
+                ),
+                pn.WidgetBox(
+                    # "##### Secondary plot",
+                    self.show_timeseries,
+                    self.show_stations,
+                    self.show_animation,
+                ),
                 self.render_button,
             )
         )
@@ -221,8 +219,10 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         else:
             try:
                 logger.debug("Trying to normalize the selected dataset: %s", dataset_file)
-                self._dataset = normalization.normalize_dataset(utils.open_dataset(dataset_file, load=False))
-            except ValueError as exc:
+                self._dataset = normalization.normalize_dataset(
+                    utils.open_dataset(dataset_file, load=False)
+                )
+            except ValueError:
                 logger.exception("Normalization failed. Resetting the UI")
                 self._reset_ui(message=UNKNOWN_FORMAT)
             else:
@@ -233,7 +233,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                 self.variable.param.set_param(options=variables, value=variables[0], disabled=False)
                 self.keep_zoom.param.set_param(disabled=False)
                 self.show_mesh.param.set_param(disabled=False)
-                if pathlib.Path(dataset_file).with_stem("fskill").is_file():
+                if with_stem(pathlib.Path(dataset_file), "fskill").is_file():
                     self.show_stations.param.set_param(disabled=False)
                 # If there is a corresponding video, then enable the show video widget
                 if pathlib.Path(dataset_file).with_suffix(".mp4").is_file():
@@ -262,7 +262,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                 self.show_timeseries.param.set_param(disabled=True)
                 self.time.param.set_param(options=[], disabled=True)
             self.render_button.param.set_param(disabled=False)
-        except:
+        except Exception:
             logger.exception("error layer")
 
     # Make `show_*` Radio boxes mutually exclusive
@@ -324,7 +324,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # the first one remains in RAM.
             # In order to avoid this, we re-open the dataset in order to get a clean Dataset
             # instance without anything loaded into memory
-            ds = normalization.normalize_dataset(utils.open_dataset(self.dataset_file.value, load=False))
+            ds = utils.open_dataset(self.dataset_file.value, load=False)
+            ds = normalization.normalize_dataset(ds)
 
             # local variables
             variable = self.variable.value
@@ -379,10 +380,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                 station_ts = api.get_station_timeseries(stations=stations, pins=station_pins)
                 station_info = api.get_station_table(stations=stations, pins=station_pins)
                 stations_row = pn.Column(
-                    station_ts.opts(width=MAIN_WIDTH // 2),
+                    station_ts,
                     station_info,
-                    width=MAIN_WIDTH,
-                    sizing_mode="scale_width",
                 )
                 main_overlay_components.append(station_pins)
 
@@ -393,19 +392,16 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                     variable=variable,
                     source_raster=self._raster,
                     layer=layer,
-                )
+                ).opts()
 
             if self.show_animation.value:
                 mp4 = str(pathlib.Path(self.dataset_file.value).with_suffix(".mp4"))
                 animation_row = pn.Row(
                     pn.pane.Video(mp4),
-                    width=MAIN_WIDTH,
                     sizing_mode="scale_width",
                 )
 
             main_overlay = reduce(operator.mul, main_overlay_components)
-            # main_row = pn.Row(main_overlay, min_width=MAIN_WIDTH, sizing_mode="scale_both")
-            # main_row = pn.Row(main_overlay, sizing_mode="stretch_width")
             main_row = main_overlay
 
             # For the record, (and this is probably a panel bug), if we use
@@ -416,10 +412,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             self._main.objects = [
                 row for row in (cbar_row, main_row, stations_row, ts_plot, animation_row) if row is not None
             ]
-            # self._main.objects = [row for row in (cbar_row, main_row)]#, stations_row, ts_plot, animation_row) if row is not None]
-            # self._main.objects = [cbar_row, pn.Row(self._tiles * self._raster)]
 
-        except:
+        except Exception:
             logger.exception("Something went wrong")
 
     @property

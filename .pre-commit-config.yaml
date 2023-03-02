@@ -1,16 +1,18 @@
 ---
-default_language_version:
-  python: 'python3.9'
-fail_fast: true
 ci:
-  skip: ["prospector"]
+  skip: ["mypy"]
+  autofix_prs: false
+default_language_version:
+  python: "python3"
+fail_fast: false
 
 repos:
   - repo: "https://github.com/pre-commit/pre-commit-hooks"
-    rev: "v4.0.1"
+    rev: "v4.4.0"
     hooks:
       - id: "check-added-large-files"
       - id: "check-ast"
+      - id: "check-byte-order-marker"
       - id: "check-docstring-first"
       - id: "check-executables-have-shebangs"
       - id: "check-json"
@@ -20,28 +22,59 @@ repos:
       - id: "check-xml"
       - id: "check-yaml"
       - id: "debug-statements"
-      - id: "fix-byte-order-marker"
       - id: "end-of-file-fixer"
-      #- id: "name-tests-test"
+        exclude: ".+\\.ipynb"
+      - id: "name-tests-test"
       - id: "trailing-whitespace"
 
+  - repo: "https://github.com/pre-commit/pygrep-hooks"
+    rev: "v1.10.0"
+    hooks:
+      - id: "python-check-blanket-noqa"
+      - id: "python-check-blanket-type-ignore"
+      - id: "python-use-type-annotations"
+
   - repo: "https://github.com/asottile/reorder_python_imports"
-    rev: "v2.6.0"
+    rev: "v3.9.0"
     hooks:
       - id: "reorder-python-imports"
         args:
-          - "--py39-plus"
+          - "--py38-plus"
 
   - repo: "https://github.com/psf/black"
-    rev: "21.11b1"
+    rev: "23.1.0"
     hooks:
       - id: "black"
+
+  - repo: "https://github.com/charliermarsh/ruff-pre-commit"
+    # Ruff version.
+    rev: 'v0.0.253'
+    hooks:
+      - id: "ruff"
+
+  - repo: "https://github.com/kynan/nbstripout"
+    rev: "0.6.1"
+    hooks:
+      - id: "nbstripout"
+
+  - repo: "https://github.com/python-poetry/poetry"
+    rev: "1.4.0"
+    hooks:
+      - id: "poetry-check"
+      - id: "poetry-lock"
+        args: ["--check"]
+      - id: "poetry-export"
+        name: 'poetry export main'
+        args: ["--without-hashes", "--only", "main", "-f", "requirements.txt", "-o", "requirements/requirements.txt"]
+      - id: "poetry-export"
+        name: 'poetry export dev'
+        args: ["--without-hashes", "--with", "dev", "--with", "docs", "--with", "jupyter", "-f", "requirements.txt", "-o", "requirements/requirements-dev.txt"]
 
   - repo: "local"
     hooks:
 
-      - id: "prospector"
-        name: "prospector"
-        entry: "prospector --absolute-paths --no-external-config --profile-path .prospector.yaml -w profile-validator -W pep257"
+      - id: "mypy"
+        name: "mypy"
+        entry: "make mypy"
         language: "system"
         types: ["python"]

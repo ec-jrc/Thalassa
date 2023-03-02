@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import operator
+import typing
 from functools import reduce
 
 import geopandas as gpd
@@ -12,25 +13,22 @@ import pandas as pd
 import pygeos
 import shapely.wkt
 import xarray as xr
-import functools
-import panel as pn
-
 from bokeh.models import HoverTool
 from bokeh.models.formatters import DatetimeTickFormatter
 from holoviews import opts as hvopts
 from holoviews.operation.datashader import dynspread
 from holoviews.operation.datashader import rasterize
 from holoviews.streams import PointerXY
-from holoviews.streams import Tap
-from holoviews.streams import Stream
 from holoviews.streams import Selection1D
+from holoviews.streams import Stream
+from holoviews.streams import Tap
 
 from .utils import get_index_of_nearest_node
 
 logger = logging.getLogger(__name__)
 
 
-def get_dtf():
+def get_dtf() -> DatetimeTickFormatter:
     dtf = DatetimeTickFormatter(
         hours="%m/%d %H:%M",
         days="%m/%d %H",
@@ -78,7 +76,7 @@ def get_wireframe(
         kwargs["x_range"] = x_range
     if y_range:
         kwargs["y_range"] = y_range
-    wireframe = dynspread(rasterize(**kwargs)).opts(tools=[])
+    wireframe = dynspread(rasterize(**kwargs)).opts(tools=[], cmap=["black"])
     return wireframe
 
 
@@ -137,7 +135,7 @@ def is_point_in_the_mesh(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
     raster_dataset = raster.values()[0].data
     data_var_name = raster.ddims[-1].name
     interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).values
-    return ~np.isnan(interpolated)
+    return typing.cast(bool, ~np.isnan(interpolated))
 
 
 def _get_stream_timeseries(
@@ -147,7 +145,6 @@ def _get_stream_timeseries(
     stream_class: Stream,
     layer: int | None = None,
 ) -> gv.DynamicMap:
-
     if stream_class not in {Tap, PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
 
@@ -326,17 +323,17 @@ def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) ->
     return ds[variable].isel(node=index)
 
 
-def plot_timeseries(ts: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
-    node_index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
-    node_lon = ds.lon.isel(node_index)
-    node_lat = ds.lat.isel(node_index)
-    title = f"Lon={x:.3f} Lat={y:.3f} - {node_lon}, {node_lat}"
-    plot = (
-        hv.Curve(ts)
-        .redim(variable, range=(ts.min(), ts.max()))
-        .opts(title=title, framewise=True, padding=0.05, show_grid=True)
-    )
-    return plot
+# def plot_timeseries(ds: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
+#     node_index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
+#     node_lon = ds.lon.isel(node_index)
+#     node_lat = ds.lat.isel(node_index)
+#     title = f"Lon={x:.3f} Lat={y:.3f} - {node_lon}, {node_lat}"
+#     plot = (
+#         hv.Curve(ds)
+#         .redim(variable, range=(ts.min(), ts.max()))
+#         .opts(title=title, framewise=True, padding=0.05, show_grid=True)
+#     )
+#     return plot
 
 
 def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:

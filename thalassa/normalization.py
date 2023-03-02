@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import enum
+import logging
 
 import xarray as xr
 
@@ -62,6 +62,10 @@ def infer_format(ds: xr.Dataset) -> KNOWN_FORMATS:
         raise ValueError("Unknown format")
 
 
+def normalize_generic(ds: xr.Dataset) -> xr.Dataset:
+    return ds
+
+
 def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
     ds = ds.rename(
         {
@@ -95,10 +99,21 @@ def normalize_pyposeidon(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def normalize_adcirc(ds: xr.Dataset) -> xr.Dataset:
+    ds = ds.rename(
+        {
+            "x": "lon",
+            "y": "lat",
+            "element": "face",
+        }
+    )
+    return ds
+
+
 NORMALIZE_DISPATCHER = {
+    KNOWN_FORMATS.GENERIC: normalize_generic,
     KNOWN_FORMATS.SCHISM: normalize_schism,
     KNOWN_FORMATS.PYPOSEIDON: normalize_pyposeidon,
-    KNOWN_FORMATS.GENERIC: lambda ds: ds,
 }
 
 

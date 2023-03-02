@@ -1,14 +1,31 @@
-.PHONY: list
+.PHONY: list docs
+
 list:
-	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
+	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | grep -E -v -e '^[^[:alnum:]]' -e '^$@$$'
 
-lock:
-	poetry lock --no-update
-	poetry export --output requirements/requirements.txt
-	poetry export --with dev --output requirements/requirements-dev.txt
+init:
+	poetry install --with dev --with docs --with jupyter --sync
+	pre-commit install
 
-build:
-	docker/build.sh
+style:
+	pre-commit run black -a
 
-drun:
-	docker/run.sh
+lint:
+	pre-commit run ruff -a
+
+mypy:
+	dmypy run thalassa
+
+test:
+	python -m pytest -vlx
+
+cov:
+	coverage erase
+	python -m pytest --cov=thalassa --cov-report term-missing -n auto --durations=10 --record-mode=none
+
+docs:
+	make -C docs html
+
+deps:
+	pre-commit run poetry-lock -a
+	pre-commit run poetry-export -a

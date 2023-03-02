@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import logging
 import logging.config
 import pathlib
 import typing
 
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 from ruamel.yaml import YAML
 
@@ -25,9 +25,9 @@ def setup_logging() -> None:
 def open_dataset(path: str | pathlib.Path, load: bool = False) -> xr.Dataset:
     path = pathlib.Path(path)
     if path.suffix == ".nc":
-        ds = xr.open_dataset(path, mask_and_scale=True)
+        ds = xr.open_dataset(path, mask_and_scale=True, cache=False)
     elif path.suffix in (".zarr", ".zip") or path.is_dir():
-        ds = xr.open_dataset(path, mask_and_scale=True, engine="zarr")
+        ds = xr.open_dataset(path, mask_and_scale=True, engine="zarr", cache=False)
     # TODO: extend with GeoTiff, Grib etc
     else:
         raise ValueError(f"Don't know how to handle this: {path}")
@@ -37,7 +37,7 @@ def open_dataset(path: str | pathlib.Path, load: bool = False) -> xr.Dataset:
     return ds
 
 
-def can_be_opened_by_xarray(path):
+def can_be_opened_by_xarray(path: str | pathlib.Path) -> bool:
     try:
         open_dataset(path)
     except ValueError:
@@ -63,7 +63,7 @@ def is_variable_visualizable(ds: xr.Dataset, variable: str) -> bool:
     return ds[variable].dims in _VISUALIZABLE_DIMS
 
 
-def filter_visualizable_data_vars(ds: xr.Dataset, variables: typing.Sequence[str]) -> list[str]:
+def filter_visualizable_data_vars(ds: xr.Dataset, variables: typing.Iterable[str]) -> list[str]:
     visualizable = []
     for var in variables:
         if is_variable_visualizable(ds=ds, variable=var):
@@ -71,7 +71,7 @@ def filter_visualizable_data_vars(ds: xr.Dataset, variables: typing.Sequence[str
     return visualizable
 
 
-def split_quads(face_nodes: np.array) -> np.array:
+def split_quads(face_nodes: npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
     """
     https://gist.github.com/pmav99/5ded91f18ef096b080b2ed45598c7d1c
     """
@@ -94,15 +94,20 @@ def split_quads(face_nodes: np.array) -> np.array:
     new_triangles = np.c_[quads_first_column, quads_last_two_columns]
 
     # Append new triangles to the existing ones
-    new_face_nodes = np.r_[existing_triangles, new_triangles].astype(int)
-    return new_face_nodes.astype(int)
+    # Also cast to the proper type for Mypy
+    new_face_nodes = typing.cast(
+        npt.NDArray[np.int_],
+        np.r_[existing_triangles, new_triangles].astype(int),
+    )
+    return new_face_nodes
+    # return new_face_nodes.astype(int)
 
 
 def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
     # https://www.unidata.ucar.edu/blogs/developer/en/entry/accessing_netcdf_data_by_coordinates
     # https://github.com/Unidata/python-workshop/blob/fall-2016/notebooks/netcdf-by-coordinates.ipynb
     dist = abs(ds.lon - lon) ** 2 + abs(ds.lat - lat) ** 2
-    index_of_nearest_node = dist.argmin()
+    index_of_nearest_node = typing.cast(int, dist.argmin())
     return index_of_nearest_node
 
 
