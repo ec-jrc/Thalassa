@@ -61,7 +61,7 @@ class FloatInputNoSpinner(pn.widgets.input._FloatInputBase):
 def choose_info_message() -> pn.pane.Alert:
     if not pathlib.Path(DATA_DIR).is_dir():
         message = MISSING_DATA_DIR
-    elif not sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB))):
+    elif not sorted(filter(normalization.can_be_inferred, glob.glob(DATA_GLOB))):
         message = EMPTY_DATA_DIR
     else:
         message = CHOOSE_FILE
@@ -151,7 +151,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # Define widgets
         self.dataset_file = pn.widgets.Select(
             name="Dataset file",
-            options=[""] + sorted(filter(utils.can_be_opened_by_xarray, glob.glob(DATA_GLOB))),
+            options=[""] + sorted(filter(normalization.can_be_inferred, glob.glob(DATA_GLOB))),
         )
         self.variable = pn.widgets.Select(name="Variable")
         self.layer = pn.widgets.Select(name="Layer")

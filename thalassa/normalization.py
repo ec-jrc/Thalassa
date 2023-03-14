@@ -2,23 +2,36 @@ from __future__ import annotations
 
 import enum
 import logging
+import pathlib
 
 import xarray as xr
 
-from .utils import split_quads
+from . import utils
 
 
 logger = logging.getLogger(__name__)
 
 
-class KNOWN_FORMATS(enum.Enum):
+class THALASSA_FORMATS(enum.Enum):
+    UNKNOWN = "UNKNOWN"
     SCHISM = "SCHISM"
     GENERIC = "GENERIC"
     PYPOSEIDON = "PYPOSEIDON"
 
 
-_GENERIC_DIMS = {"time", "node", "face", "layer", "max_no_vertices"}
-_GENERIC_VARS = {"lon", "lat", "face_nodes"}
+# fmt: off
+_GENERIC_DIMS = {
+    "time",
+    "node",
+    "face",
+    "layer",
+    "max_no_vertices",
+}
+_GENERIC_VARS = {
+    "lon",
+    "lat",
+    "face_nodes",
+}
 _SCHISM_DIMS = {
     "time",
     "nSCHISM_hgrid_edge",
@@ -27,14 +40,23 @@ _SCHISM_DIMS = {
     "nSCHISM_vgrid_layers",
     "nMaxSCHISM_hgrid_face_nodes",
 }
-_SCHISM_VARS = {"SCHISM_hgrid_node_x", "SCHISM_hgrid_node_y", "SCHISM_hgrid_face_nodes"}
+_SCHISM_VARS = {
+    "SCHISM_hgrid_node_x",
+    "SCHISM_hgrid_node_y",
+    "SCHISM_hgrid_face_nodes",
+}
 _PYPOSEIDON_DIMS = {
     "time",
     "nSCHISM_hgrid_face",
     "nSCHISM_hgrid_node",
     "nMaxSCHISM_hgrid_face_nodes",
 }
-_PYPOSEIDON_VARS = {"SCHISM_hgrid_node_x", "SCHISM_hgrid_node_y", "SCHISM_hgrid_face_nodes"}
+_PYPOSEIDON_VARS = {
+    "SCHISM_hgrid_node_x",
+    "SCHISM_hgrid_node_y",
+    "SCHISM_hgrid_face_nodes",
+}
+# fmt: on
 
 
 def is_generic(ds: xr.Dataset) -> bool:
@@ -49,17 +71,31 @@ def is_pyposeidon(ds: xr.Dataset) -> bool:
     return _PYPOSEIDON_DIMS.issubset(ds.dims) and _PYPOSEIDON_VARS.issubset(ds.data_vars)
 
 
-def infer_format(ds: xr.Dataset) -> KNOWN_FORMATS:
+def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
     if is_schism(ds):
-        return KNOWN_FORMATS.SCHISM
+        format = THALASSA_FORMATS.SCHISM
     elif is_pyposeidon(ds):
-        return KNOWN_FORMATS.PYPOSEIDON
+        format = THALASSA_FORMATS.PYPOSEIDON
     elif is_generic(ds):
-        return KNOWN_FORMATS.GENERIC
+        format = THALASSA_FORMATS.GENERIC
     else:
-        logger.debug("dataset dims: %s", ds.dims)
-        logger.debug("dataset vars: %s", ds.data_vars.keys())
-        raise ValueError("Unknown format")
+        format = THALASSA_FORMATS.UNKNOWN
+    logger.debug("Inferred format: %s", format)
+    return format
+
+
+def can_be_inferred(path: str | pathlib.Path) -> bool:
+    logger.debug("Trying to open: %s", path)
+    try:
+        ds = utils.open_dataset(path)
+    except ValueError:
+        return False
+    format = infer_format(ds)
+    if format == THALASSA_FORMATS.UNKNOWN:
+        result = False
+    else:
+        result = True
+    return result
 
 
 def normalize_generic(ds: xr.Dataset) -> xr.Dataset:
@@ -111,15 +147,14 @@ def normalize_adcirc(ds: xr.Dataset) -> xr.Dataset:
 
 
 NORMALIZE_DISPATCHER = {
-    KNOWN_FORMATS.GENERIC: normalize_generic,
-    KNOWN_FORMATS.SCHISM: normalize_schism,
-    KNOWN_FORMATS.PYPOSEIDON: normalize_pyposeidon,
+    THALASSA_FORMATS.GENERIC: normalize_generic,
+    THALASSA_FORMATS.SCHISM: normalize_schism,
+    THALASSA_FORMATS.PYPOSEIDON: normalize_pyposeidon,
 }
 
 
 def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
     format = infer_format(ds)
-    logger.debug("inferred format: %s", format)
     normalizer_func = NORMALIZE_DISPATCHER[format]
     normalized_ds = normalizer_func(ds)
     # Handle quad elements
@@ -130,7 +165,7 @@ def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
     # I'd rather avoid altering the values of the provided netcdf file therefore we go for option #2,
     # i.e. we create the `triface_nodes` variable.
     if len(normalized_ds.max_no_vertices) == 4:
-        triface_nodes = split_quads(normalized_ds.face_nodes.values)
+        triface_nodes = utils.split_quads(normalized_ds.face_nodes.values)
     else:
         triface_nodes = normalized_ds.face_nodes.values
     normalized_ds["triface_nodes"] = (("triface", "three"), triface_nodes)
