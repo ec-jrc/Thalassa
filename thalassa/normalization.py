@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class THALASSA_FORMATS(enum.Enum):
     UNKNOWN = "UNKNOWN"
+    ADCIRC = "ADCIRC"
     SCHISM = "SCHISM"
     GENERIC = "GENERIC"
     PYPOSEIDON = "PYPOSEIDON"
@@ -56,6 +57,31 @@ _PYPOSEIDON_VARS = {
     "SCHISM_hgrid_node_y",
     "SCHISM_hgrid_face_nodes",
 }
+_ADCIRC_DIMS = {
+    "time",
+    "node",
+    "nele",
+    "nvertex",
+    "mesh",
+    "nope",
+    "neta",
+    "nbou",
+    "nvel",
+}
+_ADCIRC_VARS = {
+    "adcirc_mesh",
+    "depth",
+    "element",
+    "ibtypee",
+    "ibtype",
+    "max_nvdll",
+    "max_nvell",
+    "nbdv",
+    "nbvv",
+    "nvdll",
+    "nvell",
+    "zeta",
+}
 # fmt: on
 
 
@@ -71,9 +97,15 @@ def is_pyposeidon(ds: xr.Dataset) -> bool:
     return _PYPOSEIDON_DIMS.issubset(ds.dims) and _PYPOSEIDON_VARS.issubset(ds.data_vars)
 
 
+def is_adcirc(ds: xr.Dataset) -> bool:
+    return _ADCIRC_DIMS.issubset(ds.dims) and _ADCIRC_VARS.issubset(ds.data_vars)
+
+
 def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
     if is_schism(ds):
         format = THALASSA_FORMATS.SCHISM
+    elif is_adcirc(ds):
+        format = THALASSA_FORMATS.ADCIRC
     elif is_pyposeidon(ds):
         format = THALASSA_FORMATS.PYPOSEIDON
     elif is_generic(ds):
@@ -140,13 +172,19 @@ def normalize_adcirc(ds: xr.Dataset) -> xr.Dataset:
         {
             "x": "lon",
             "y": "lat",
-            "element": "face",
+            "element": "face_nodes",
+            "nvertex": "max_no_vertices",
+            "nele": "face",
         }
     )
+    # ADCIRC output uses one-based indices for `face_nodes`
+    # Let's ensure that we use zero-based indices everywhere.
+    ds["face_nodes"] -= 1
     return ds
 
 
 NORMALIZE_DISPATCHER = {
+    THALASSA_FORMATS.ADCIRC: normalize_adcirc,
     THALASSA_FORMATS.GENERIC: normalize_generic,
     THALASSA_FORMATS.SCHISM: normalize_schism,
     THALASSA_FORMATS.PYPOSEIDON: normalize_pyposeidon,
