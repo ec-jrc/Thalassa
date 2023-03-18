@@ -63,8 +63,6 @@ _ADCIRC_DIMS = {
     "nele",
     "nvertex",
     "mesh",
-    "nope",
-    "neta",
     "nbou",
     "nvel",
 }
@@ -72,13 +70,9 @@ _ADCIRC_VARS = {
     "adcirc_mesh",
     "depth",
     "element",
-    "ibtypee",
     "ibtype",
-    "max_nvdll",
     "max_nvell",
-    "nbdv",
     "nbvv",
-    "nvdll",
     "nvell",
     "zeta",
 }
