@@ -23,7 +23,7 @@ from holoviews.streams import Selection1D
 from holoviews.streams import Stream
 from holoviews.streams import Tap
 
-from .utils import get_index_of_nearest_node
+from . import utils
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ def _get_stream_timeseries(
             title = f"Lon={x:.3f} Lat={y:.3f}"
             plot = hv.Curve([])
         else:
-            node_index = get_index_of_nearest_node(ds=ds, lon=x, lat=y)
+            node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
             ts = ds.isel(node=node_index)
             title = f"Lon={ts.lon.values:.3f} Lat={ts.lat.values:.3f}"
             plot = hv.Curve(ts[variable])
@@ -318,13 +318,13 @@ def get_pointer_timeseries(
 
 
 def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) -> xr.DataArray:
-    index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
+    index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
     # extracted = ds[[variable, "lon", "lat"]].isel(node=index)
     return ds[variable].isel(node=index)
 
 
 # def plot_timeseries(ds: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
-#     node_index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
+#     node_index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
 #     node_lon = ds.lon.isel(node_index)
 #     node_lat = ds.lat.isel(node_index)
 #     title = f"Lon={x:.3f} Lat={y:.3f} - {node_lon}, {node_lat}"
