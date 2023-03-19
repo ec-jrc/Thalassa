@@ -6,6 +6,7 @@ import pathlib
 
 import xarray as xr
 
+from . import api
 from . import utils
 
 
@@ -113,7 +114,7 @@ def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
 def can_be_inferred(path: str | pathlib.Path) -> bool:
     logger.debug("Trying to open: %s", path)
     try:
-        ds = utils.open_dataset(path)
+        ds = api.open_dataset(path, load=False, normalize=False)
     except ValueError:
         return False
     format = infer_format(ds)

@@ -81,7 +81,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=var_cache_apt --mount=type=cache
     apt update; \
     apt install -yq \
         # required by cartopy
-        libgeos-dev \  
+        libgeos-dev \
       ; \
     apt autoremove -y; \
     echo 'Installation of basic packages: OK';

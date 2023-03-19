@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging.config
-import os
-import pathlib
 import typing
 
 import numpy as np
@@ -21,36 +19,6 @@ def setup_logging() -> None:
 
     logging.config.dictConfig(config["logging"])
     logger.debug(logging.getLogger("thalassa").handlers)
-
-
-def open_dataset(path: str | os.PathLike[str], load: bool = False) -> xr.Dataset:
-    path = pathlib.Path(path)
-    kwargs: dict[str, typing.Any] = dict(mask_and_scale=True, cache=False)
-    if path.suffix in (".nc", ".netcdf"):
-        # ADCIRC datasets are not compatible with xarray:
-        # They fail with the error:
-        #   "dimension 'neta' already exists as a scalar variable",
-        #   "dimension 'nvel' already exists as a scalar variable",
-        # Source: https://github.com/pydata/xarray/issues/1709#issuecomment-343714896
-        #
-        # The workaround we have for this is to drop the problematic variables
-        # As an implementation detail we make use of an xarray "feature" which ignores
-        # non-existing names in `drop_variables`. So we can use `drop_variables=[...]` even
-        # if we are opening a dataset from a different solver.
-        # This may cause  issues if different solvers use `neta/nvel` as dimension/variable
-        # names, but at least for now it seems to be good enough.
-        kwargs["engine"] = "netcdf4"
-        kwargs["drop_variables"] = ["neta", "nvel"]
-    elif path.suffix in (".zarr", ".zip") or path.is_dir():
-        kwargs["engine"] = "zarr"
-    # TODO: extend with GeoTiff, Grib etc
-    else:
-        raise ValueError(f"Don't know how to handle this: {path}")
-    ds = xr.open_dataset(path, **kwargs)
-    if load:
-        # load dataset to memory
-        ds.load()
-    return ds
 
 
 _VISUALIZABLE_DIMS = {
