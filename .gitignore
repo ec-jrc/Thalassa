@@ -145,6 +145,7 @@ cython_debug/
 
 #data folder
 data/
+data.*/
 data.bak/
 data_/
 
