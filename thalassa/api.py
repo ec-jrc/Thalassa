@@ -59,7 +59,7 @@ def open_dataset(
         # This may cause  issues if different solvers use `neta/nvel` as dimension/variable
         # names, but at least for now it seems to be good enough.
         default_kwargs["engine"] = "netcdf4"
-        default_kwargs["drop_variables"] = ["neta", "nvel"]
+        default_kwargs["drop_variables"] = ["neta", "nvel", "max_nvdll", "max_nvell"]
     elif path.suffix in (".zarr", ".zip") or path.is_dir():
         default_kwargs["engine"] = "zarr"
     # TODO: extend with GeoTiff, Grib etc

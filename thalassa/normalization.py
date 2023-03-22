@@ -65,14 +65,12 @@ _ADCIRC_DIMS = {
     "nvertex",
     "mesh",
     "nbou",
-    "nvel",
 }
 _ADCIRC_VARS = {
     "adcirc_mesh",
     "depth",
     "element",
     "ibtype",
-    "max_nvell",
     "nbvv",
     "nvell",
     "zeta",
