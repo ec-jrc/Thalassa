@@ -25,14 +25,13 @@ class THALASSA_FORMATS(enum.Enum):
 _GENERIC_DIMS = {
     "time",
     "node",
-    "face",
-    "layer",
-    "max_no_vertices",
+    "triface",
+    "three",
 }
 _GENERIC_VARS = {
     "lon",
     "lat",
-    "face_nodes",
+    "triface_nodes",
 }
 _SCHISM_DIMS = {
     "time",
@@ -79,7 +78,8 @@ _ADCIRC_VARS = {
 
 
 def is_generic(ds: xr.Dataset) -> bool:
-    return _GENERIC_DIMS.issubset(ds.dims) and _GENERIC_VARS.issubset(ds.data_vars)
+    total_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
+    return _GENERIC_DIMS.issubset(ds.dims) and _GENERIC_VARS.issubset(total_vars)
 
 
 def is_schism(ds: xr.Dataset) -> bool:
