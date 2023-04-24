@@ -77,10 +77,10 @@ template.sidebar.append(
         - [searvey](https://github.com/oceanmodeling/searvey/)
         - [thalassa](https://github.com/ec-jrc/thalassa/)
         - [schism](http://ccrm.vims.edu/schismweb/)
-        """
+        """,
         ),
         # pn.layout.VSpacer(height=100),
-    )
+    ),
 )
 
 _ = template.servable()

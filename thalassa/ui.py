@@ -182,7 +182,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                     self.show_animation,
                 ),
                 self.render_button,
-            )
+            ),
         )
         logger.debug("UI setup: done")
 
@@ -226,7 +226,8 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             else:
                 logger.exception("Normalization succeeded. Setting widgets")
                 variables = utils.filter_visualizable_data_vars(
-                    self._dataset, self._dataset.data_vars.keys()
+                    self._dataset,
+                    self._dataset.data_vars.keys(),
                 )
                 self.variable.param.set_param(options=variables, value=variables[0], disabled=False)
                 self.keep_zoom.param.set_param(disabled=False)

@@ -138,7 +138,7 @@ def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
             "nMaxSCHISM_hgrid_face_nodes": "max_no_vertices",
             "SCHISM_hgrid_node_x": "lon",
             "SCHISM_hgrid_node_y": "lat",
-        }
+        },
     )
     # SCHISM output uses one-based indices for `face_nodes`
     # Let's ensure that we use zero-based indices everywhere.
@@ -155,7 +155,7 @@ def normalize_pyposeidon(ds: xr.Dataset) -> xr.Dataset:
             "nMaxSCHISM_hgrid_face_nodes": "max_no_vertices",
             "SCHISM_hgrid_node_x": "lon",
             "SCHISM_hgrid_node_y": "lat",
-        }
+        },
     )
     return ds
 
@@ -168,7 +168,7 @@ def normalize_adcirc(ds: xr.Dataset) -> xr.Dataset:
             "element": "face_nodes",
             "nvertex": "max_no_vertices",
             "nele": "face",
-        }
+        },
     )
     # ADCIRC output uses one-based indices for `face_nodes`
     # Let's ensure that we use zero-based indices everywhere.

@@ -270,7 +270,7 @@ def get_station_timeseries(
                 ylabel="Elevation",
                 tools=["hover"],
                 xformatter=get_dtf(),
-            )
+            ),
         )
         return overlay
 
@@ -409,7 +409,7 @@ def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
             third_lats,
             first_lons,
             first_lats,
-        )
+        ),
     ).T
 
     # Re-stack the polygon coords. This time we should have 4 points per

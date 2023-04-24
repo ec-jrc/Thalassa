@@ -105,6 +105,7 @@ select = [
     "E",  # pycodestyle
     "F",  # pyflakes
     "C90",  # mccabe
+    "COM",  # flake8-commas
 ]
 ignore = [
     "E501", # line-too-long
