@@ -105,6 +105,7 @@ select = [
     "E",  # pycodestyle
     "F",  # pyflakes
     "C90",  # mccabe
+    "A",  # flake8-builtins
     "COM",  # flake8-commas
 ]
 ignore = [

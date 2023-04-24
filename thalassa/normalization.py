@@ -96,17 +96,17 @@ def is_adcirc(ds: xr.Dataset) -> bool:
 
 def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
     if is_schism(ds):
-        format = THALASSA_FORMATS.SCHISM
+        fmt = THALASSA_FORMATS.SCHISM
     elif is_adcirc(ds):
-        format = THALASSA_FORMATS.ADCIRC
+        fmt = THALASSA_FORMATS.ADCIRC
     elif is_pyposeidon(ds):
-        format = THALASSA_FORMATS.PYPOSEIDON
+        fmt = THALASSA_FORMATS.PYPOSEIDON
     elif is_generic(ds):
-        format = THALASSA_FORMATS.GENERIC
+        fmt = THALASSA_FORMATS.GENERIC
     else:
-        format = THALASSA_FORMATS.UNKNOWN
-    logger.debug("Inferred format: %s", format)
-    return format
+        fmt = THALASSA_FORMATS.UNKNOWN
+    logger.debug("Inferred format: %s", fmt)
+    return fmt
 
 
 def can_be_inferred(path: str | pathlib.Path) -> bool:
@@ -115,8 +115,8 @@ def can_be_inferred(path: str | pathlib.Path) -> bool:
         ds = api.open_dataset(path, load=False, normalize=False)
     except ValueError:
         return False
-    format = infer_format(ds)
-    if format == THALASSA_FORMATS.UNKNOWN:
+    fmt = infer_format(ds)
+    if fmt == THALASSA_FORMATS.UNKNOWN:
         result = False
     else:
         result = True
@@ -185,8 +185,8 @@ NORMALIZE_DISPATCHER = {
 
 
 def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
-    format = infer_format(ds)
-    normalizer_func = NORMALIZE_DISPATCHER[format]
+    fmt = infer_format(ds)
+    normalizer_func = NORMALIZE_DISPATCHER[fmt]
     normalized_ds = normalizer_func(ds)
     # Handle quad elements
     # Splitting quad elements to triangles, means that the number of faces increases
