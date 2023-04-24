@@ -4,7 +4,7 @@ list:
 	@LC_ALL=C $(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | grep -E -v -e '^[^[:alnum:]]' -e '^$@$$'
 
 init:
-	poetry install --with dev --with docs --with jupyter --sync
+	poetry install --with dev --sync -vvv
 	pre-commit install
 
 style:
@@ -21,10 +21,13 @@ test:
 
 cov:
 	coverage erase
-	python -m pytest --cov=thalassa --cov-report term-missing -n auto --durations=10 --record-mode=none
+	python -m pytest --cov=thalassa --cov-report term-missing --durations=10
 
-docs:
-	make -C docs html
+clean_notebooks:
+	pre-commit run nbstripout
+
+exec_notebooks:
+	python -m nbconvert --to notebook --execute --stdout notebooks/* >/dev/null
 
 deps:
 	pre-commit run poetry-lock -a

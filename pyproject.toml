@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "thalassa"
-version = "0.3.0" # overwritten by poetry-dynamic-versioning plugin
+version = "0.0.0"  # overwritten by poetry-dynamic-versioning plugin
 description = ""
 authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
 license = 'EUPL v1.2'
@@ -17,14 +17,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Visualization",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.9"
 bokeh = "*"
 Cartopy = "*"
 datashader = "*"
@@ -34,14 +33,14 @@ holoviews = "*"
 hvplot = "*"
 llvmlite = "*"
 netCDF4 = "*"
+numpy = "*"
 pandas = "*"
 panel = "*"
-pygeos = "*"
 "ruamel.yaml" = "*"
 scipy = "*"
 shapely = "*"
 tornado = "*"
-xarray = "*"
+xarray = {version = "*", extras = ["io", "accel"]}
 
 [tool.poetry.group.dev.dependencies]
 covdefaults = "*"
@@ -49,24 +48,23 @@ mypy = ">=1"
 pytest = "*"
 pytest-cov = ">=3.0"
 ipykernel = "*"
+ipython = "*"
+nbconvert = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
-dirty = true
+dirty = false
 
 [build-system]
-# requires = [
-#     "poetry-core>=1.0.0",
-#     "poetry-dynamic-versioning",
-# ]
-# build-backend = "poetry_dynamic_versioning.backend"
-
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+    "poetry-core>=1.0.0",
+    "poetry-dynamic-versioning",
+]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.black]
 line-length = 108
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.pytest.ini_options]
 addopts = "-ra --verbose --showlocals --tb=short"
@@ -78,7 +76,7 @@ filterwarnings = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 plugins = [
     "numpy.typing.mypy_plugin"
 ]
@@ -99,7 +97,7 @@ module = "tests.*"
 disallow_untyped_defs = true
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 line-length = 108
 select = [
     "E",  # pycodestyle
@@ -107,9 +105,23 @@ select = [
     "C90",  # mccabe
     "A",  # flake8-builtins
     "COM",  # flake8-commas
+    # "UP",  # pyupgrade
+    # "YTT",  # flake-2020
+    # "S",  # floke8-bandit
+    # "BLE",  # flake8-blind-except
+    # "B",  # flake8-bugbear
+    # "T20",  # flake8-print
+    # "PD",  # pandas-vet
+    # "NPY",  # numpy-specific rules
+    # "RUF",  # ruff-specific rules
+    # "D",  # pydocstyle
+    # "I",  # isort
+    # "N",  # pep8-naming
 ]
 ignore = [
     "E501", # line-too-long
+    "D103",  # undocumented-public-function
+    "PD901",  # pandas-df-variable-name
 ]
 
 [tool.coverage.run]
@@ -123,4 +135,4 @@ parallel = true
 sigterm = true
 
 [tool.coverage.report]
-f-ail_under = 90
+fail_under = 90
