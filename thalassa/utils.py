@@ -5,6 +5,7 @@ import typing
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 import xarray as xr
 from ruamel.yaml import YAML
 
@@ -19,6 +20,38 @@ def setup_logging() -> None:
 
     logging.config.dictConfig(config["logging"])
     logger.debug(logging.getLogger("thalassa").handlers)
+
+
+def generate_thalassa_ds(
+    nodes: npt.NDArray[np.int_],
+    triface_nodes: npt.NDArray[np.int_],
+    lons: npt.NDArray[np.float_] | None = None,
+    lats: npt.NDArray[np.float_] | None = None,
+    time_range: pd.DateTimeIndex | None = None,
+    **kwargs: dict[str, tuple[tuple[str], npt.NDArray[np.float_]]],
+) -> xr.Dataset:
+    """Return a "thalassa" dataset"""
+    # Coordinates
+    coords = dict(
+        node=nodes,
+        triface=range(len(triface_nodes)),
+    )
+    if time_range is not None:
+        coords["time"] = (("time"), time_range)
+    # Data Variables
+    data_vars: dict[str, typing.Any] = {
+        "triface_nodes": (("triface", "three"), triface_nodes),
+        **kwargs,
+    }
+    if lons:
+        data_vars["lon"] = (("node"), lons)
+    if lats:
+        data_vars["lat"] = (("node"), lats)
+    ds = xr.Dataset(
+        coords=coords,
+        data_vars=data_vars,
+    )
+    return ds
 
 
 _VISUALIZABLE_DIMS = {
