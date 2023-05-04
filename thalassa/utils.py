@@ -121,3 +121,46 @@ def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
 def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) -> xr.DataArray:
     index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
     return ds[variable].isel(node=index)
+
+
+def drop_elements_crossing_idl(
+    ds: xr.Dataset,
+    max_lon: float = 10,
+) -> xr.Dataset:
+    """
+    Drop triface elements crossing the International Date Line (IDL).
+
+    ``max_lon`` is the maximum longitudinal "distance" in degrees for an element.
+
+    What we are actually trying to do in this function is to identify mesh triangles that cross
+    the IDL. The truth is that when you have a triplet of nodes you can't really know if the
+    tirangle they create is the one in `[-180, 180]` or the one that crosses the IDL.
+    So here we make one assumption: That we are dealing with a global mesh with a lot of elements.
+    Therefore we assume that the elements that cross the IDL are the ones that:
+    1. have 2 nodes with different longitudinal sign, e.g. -179 and 179
+    2. the absolute of the difference of the longitudes is greater than a user defined threshold
+       e.g. `|179 - (-179)| >= threshold`
+    The second rule exists to remove false positives close to Greenwich (e.g. 0.1 and -0.1)
+    These rules can lead to false positives close to the poles (e.g. latitudes > 89) especially
+    if a small value for `max_lon` is used. Nevertheless, the main purpose of this function is
+    to visualize data, so some false positives are not the end of the wold.
+    """
+    if max_lon <= 0:
+        raise ValueError(f'Maximum longitudinal "distance" must be positive: {max_lon}')
+    a, b, c = ds.triface_nodes.data.T
+    lon = ds.lon.data
+    lon_a = lon[a]
+    lon_b = lon[b]
+    lon_c = lon[c]
+    # `np.asarray(condition).nonzero()` is equivalent to `np.where(condition)`
+    # For more info check the help of `np.where()`
+    condition = (
+        # fmt: off
+          ((lon_a * lon_b < 0) & (np.abs(lon_a - lon_b) >= max_lon))
+        | ((lon_a * lon_c < 0) & (np.abs(lon_a - lon_c) >= max_lon))
+        | ((lon_b * lon_c < 0) & (np.abs(lon_b - lon_c) >= max_lon))
+        # fmt: on
+    )
+    indices_of_triface_nodes_crossing_idl = np.asarray(condition).nonzero()[0]
+    ds = ds.drop_isel(triface=indices_of_triface_nodes_crossing_idl)
+    return ds
