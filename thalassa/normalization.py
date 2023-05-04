@@ -112,7 +112,7 @@ def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
 def can_be_inferred(path: str | pathlib.Path) -> bool:
     logger.debug("Trying to open: %s", path)
     try:
-        ds = api.open_dataset(path, load=False, normalize=False)
+        ds = api.open_dataset(path, normalize=False)
     except ValueError:
         return False
     fmt = infer_format(ds)

@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 import operator
 import os
-import pathlib
 import typing
+import warnings
 from functools import reduce
 
 import geopandas as gpd
@@ -30,9 +30,23 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 
+# ADCIRC datasets are not compatible with xarray:
+# They fail with the error:
+#   "dimension 'neta' already exists as a scalar variable",
+#   "dimension 'nvel' already exists as a scalar variable",
+# Source: https://github.com/pydata/xarray/issues/1709#issuecomment-343714896
+#
+# The workaround we have for this is to drop the problematic variables
+# As an implementation detail we make use of an xarray "feature" which ignores
+# non-existing names in `drop_variables`. So we can use `drop_variables=[...]` even
+# if we are opening a dataset from a different solver.
+# This may cause  issues if different solvers use `neta/nvel` as dimension/variable
+# names, but at least for now it seems to be good enough.
+ADCIRC_VARIABLES_TO_BE_DROPPED = ["neta", "nvel", "max_nvdll", "max_nvell"]
+
+
 def open_dataset(
     path: str | os.PathLike[str],
-    load: bool = False,
     normalize: bool = True,
     **kwargs: dict[str, typing.Any],
 ) -> xr.Dataset:
@@ -40,38 +54,19 @@ def open_dataset(
     Open the file specified in ``path`` using ``xarray`` and return an `xr.Dataset``
 
     If ``normalize`` is ``True``, then the file is converted/normalized to the ``Thalassa`` schema.
-    Normalization only works for ``SCHISM`` and ``ADCIRC`` netcdf files.
+    Normalization is currently only supported for ``SCHISM`` and ``ADCIRC`` netcdf files.
+
+    ``kwargs`` are being passed to ``xr.open_dataset``
     """
-    path = pathlib.Path(path)
-    default_kwargs: dict[str, typing.Any] = dict(mask_and_scale=True, cache=False)
-    if path.suffix in (".nc", ".netcdf"):
-        # ADCIRC datasets are not compatible with xarray:
-        # They fail with the error:
-        #   "dimension 'neta' already exists as a scalar variable",
-        #   "dimension 'nvel' already exists as a scalar variable",
-        # Source: https://github.com/pydata/xarray/issues/1709#issuecomment-343714896
-        #
-        # The workaround we have for this is to drop the problematic variables
-        # As an implementation detail we make use of an xarray "feature" which ignores
-        # non-existing names in `drop_variables`. So we can use `drop_variables=[...]` even
-        # if we are opening a dataset from a different solver.
-        # This may cause  issues if different solvers use `neta/nvel` as dimension/variable
-        # names, but at least for now it seems to be good enough.
-        default_kwargs["engine"] = "netcdf4"
-        default_kwargs["drop_variables"] = ["neta", "nvel", "max_nvdll", "max_nvell"]
-    elif path.suffix in (".zarr", ".zip") or path.is_dir():
-        default_kwargs["engine"] = "zarr"
-    # TODO: extend with GeoTiff, Grib etc
-    else:
-        raise ValueError(f"Don't know how to handle this: {path}")
-    ds = xr.open_dataset(
-        path, **{**default_kwargs, **kwargs}  #  When we drop python3.8 we will be able to use PEP584 syntax
+    default_kwargs: dict[str, typing.Any] = dict(
+        mask_and_scale=True,
+        cache=False,
+        drop_variables=ADCIRC_VARIABLES_TO_BE_DROPPED,
     )
+    with warnings.catch_warnings(record=True):
+        ds = xr.open_dataset(path, **(default_kwargs | kwargs))  # type: ignore[arg-type]
     if normalize:
         ds = normalization.normalize_dataset(ds)
-    if load:
-        # load dataset to memory
-        ds.load()
     return ds
 
 

@@ -219,7 +219,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         else:
             try:
                 logger.debug("Trying to normalize the selected dataset: %s", dataset_file)
-                self._dataset = api.open_dataset(dataset_file, load=False, normalize=True)
+                self._dataset = api.open_dataset(dataset_file, normalize=True)
             except ValueError:
                 logger.exception("Normalization failed. Resetting the UI")
                 self._reset_ui(message=UNKNOWN_FORMAT)
@@ -323,7 +323,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             # the first one remains in RAM.
             # In order to avoid this, we re-open the dataset in order to get a clean Dataset
             # instance without anything loaded into memory
-            ds = api.open_dataset(self.dataset_file.value, load=False, normalize=True)
+            ds = api.open_dataset(self.dataset_file.value, normalize=True)
 
             # local variables
             variable = self.variable.value
