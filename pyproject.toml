@@ -33,7 +33,10 @@ holoviews = "*"
 hvplot = "*"
 llvmlite = "*"
 netCDF4 = "*"
-numpy = "*"
+# datashader has fixed the incompatibilities with numpy, but they haven't released a new package
+# As soon as datashader 1.4.5 gets released we should be able to remove the pin
+# https://github.com/holoviz/datashader/issues/1158
+numpy = "<1.24"
 pandas = "*"
 panel = "*"
 "ruamel.yaml" = "*"
