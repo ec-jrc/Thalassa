@@ -12,7 +12,6 @@ import geoviews as gv
 import holoviews as hv
 import numpy as np
 import pandas as pd
-import pygeos
 import shapely.wkt
 import xarray as xr
 from bokeh.models import HoverTool
@@ -428,13 +427,11 @@ def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
         raise ValueError("Something went wrong")
 
     # generate Polygon instance
-    polygons = pygeos.polygons(polygons_coords)
-    polygon = pygeos.set_operations.coverage_union_all(polygons)
+    polygons = shapely.polygons(polygons_coords)
+    polygon = shapely.coverage_union_all(polygons)
 
     # convert to GeoDataFrame
-    df = pd.DataFrame({"geometry": pygeos.to_wkt(polygon)}, index=[0])
-    df["geometry"] = df["geometry"].apply(shapely.wkt.loads)
-    gdf = gpd.GeoDataFrame(df, geometry="geometry")
+    gdf = gpd.GeoDataFrame(geometry=[polygon])
 
     logger.info("Polygon: generated")
 
