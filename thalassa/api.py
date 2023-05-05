@@ -82,11 +82,13 @@ def get_dtf() -> DatetimeTickFormatter:
 
 def create_trimesh(
     ds: xr.Dataset,
-    variable: str,
+    variable: str | None = None,
     timestamp: str | pd.Timestamp | None = None,
     layer: int | None = None,
 ) -> gv.TriMesh:
-    columns = ["lon", "lat", variable]
+    columns = ["lon", "lat"]
+    if variable is not None:
+        columns.append(variable)
     if layer is not None:
         ds = ds.isel(layer=layer)
     if timestamp == "max":
@@ -98,8 +100,11 @@ def create_trimesh(
     else:
         points_df = ds[columns].to_dataframe()
     points_df = points_df.reset_index(drop=True)
-    points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
-    trimesh = gv.TriMesh((ds.triface_nodes.values, points_gv))
+    if variable:
+        points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
+    else:
+        points_gv = gv.Points(points_df, kdims=["lon", "lat"])
+    trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv))
     return trimesh
 
 
