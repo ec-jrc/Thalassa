@@ -132,6 +132,7 @@ ignore = [
 [tool.coverage.run]
 plugins = ["covdefaults"]
 source = ["thalassa"]
+omit = ["thalassa/ui.py"]
 concurrency = [
   "multiprocessing",
   "thread",
@@ -140,4 +141,4 @@ parallel = true
 sigterm = true
 
 [tool.coverage.report]
-fail_under = 5
+fail_under = 55

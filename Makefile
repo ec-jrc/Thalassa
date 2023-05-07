@@ -17,7 +17,7 @@ mypy:
 	dmypy run thalassa
 
 test:
-	python -m pytest -vlx
+	python -m pytest -vlx --durations 10
 
 cov:
 	coverage erase

@@ -3,11 +3,13 @@ from __future__ import annotations
 import logging.config
 import typing
 
+import geopandas as gpd
 import geoviews as gv
 import holoviews as hv
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+import shapely
 import xarray as xr
 from ruamel.yaml import YAML
 
@@ -217,3 +219,69 @@ def is_point_in_the_raster(raster: gv.DynamicMap, lon: float, lat: float) -> boo
     data_var_name = raster.ddims[-1].name
     interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).data
     return typing.cast(bool, ~np.isnan(interpolated))
+
+
+def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
+    """Return a ``gpd.GeoDataFrame`` containing the union of all the polygons"""
+    logger.debug("Starting polygon generation")
+    # Get the indexes of the nodes
+    triface_nodes = ds.triface_nodes.data
+    nodes = ds.node.data
+    first_nodes = nodes[triface_nodes[:, 0]]
+    second_nodes = nodes[triface_nodes[:, 1]]
+    third_nodes = nodes[triface_nodes[:, 2]]
+    del triface_nodes
+    del nodes
+
+    lons = ds.lon.data
+    lats = ds.lat.data
+    first_lons = lons[first_nodes]
+    second_lons = lons[second_nodes]
+    third_lons = lons[third_nodes]
+    del lons
+
+    lats = ds.lat.data
+    first_lats = lats[first_nodes]
+    second_lats = lats[second_nodes]
+    third_lats = lats[third_nodes]
+    del lats
+    del first_nodes
+    del second_nodes
+    del third_nodes
+
+    # Stack the coords, one polygon per line
+    polygons_per_line = np.vstack(
+        (
+            first_lons,
+            first_lats,
+            second_lons,
+            second_lats,
+            third_lons,
+            third_lats,
+            first_lons,
+            first_lats,
+        ),
+    ).T
+
+    # Re-stack the polygon coords. This time we should have 4 points per line
+    polygons_coords = np.stack(
+        (
+            polygons_per_line[:, :2],
+            polygons_per_line[:, 2:4],
+            polygons_per_line[:, 4:6],
+            polygons_per_line[:, 6:8],
+        ),
+        axis=1,
+    )
+    # sanity check
+    if polygons_coords.shape[1:] != (4, 2):
+        raise ValueError("Something went wrong")
+    del polygons_per_line
+
+    polygons = shapely.polygons(polygons_coords)
+    polygon = shapely.coverage_union_all(polygons)
+    del polygons
+
+    # convert to GeoDataFrame
+    gdf = gpd.GeoDataFrame(geometry=[polygon])
+    return gdf

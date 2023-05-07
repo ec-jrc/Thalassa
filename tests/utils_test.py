@@ -116,3 +116,14 @@ def test_drop_elements_crossing_idl_no_elements_crossing_no_elements_dropped():
     )
     ds = utils.drop_elements_crossing_idl(orig_ds)
     assert orig_ds.equals(ds)
+
+
+def test_generate_mesh_polygon():
+    ds = utils.generate_thalassa_ds(
+        nodes=range(4),
+        triface_nodes=[[0, 1, 2], [1, 2, 3]],
+        lons=[10, 10, 12, 12],
+        lats=[20, 22, 20, 22],
+    )
+    gdf = utils.generate_mesh_polygon(ds)
+    assert gdf.geometry[0].area == 4

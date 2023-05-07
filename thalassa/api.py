@@ -7,12 +7,9 @@ import typing
 import warnings
 from functools import reduce
 
-import geopandas as gpd
 import geoviews as gv
 import holoviews as hv
-import numpy as np
 import pandas as pd
-import shapely.wkt
 import xarray as xr
 from bokeh.models import HoverTool
 from bokeh.models.formatters import DatetimeTickFormatter
@@ -175,7 +172,7 @@ def _get_stream_timeseries(
         else:
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
             ts = ds.isel(node=node_index)
-            title = f"Lon={ts.lon.values:.3f} Lat={ts.lat.values:.3f}"
+            title = f"Lon={ts.lon.data:.3f} Lat={ts.lat.data:.3f}"
             plot = hv.Curve(ts[variable])
             plot = plot.redim(
                 variable,
@@ -349,58 +346,3 @@ def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) ->
 #         .opts(title=title, framewise=True, padding=0.05, show_grid=True)
 #     )
 #     return plot
-
-
-def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
-    logger.debug("Starting polygon generation")
-    # Get the indexes of the nodes
-    first_nodes = ds.node.values[ds.triface_nodes.values[:, 0]]
-    second_nodes = ds.node.values[ds.triface_nodes.values[:, 1]]
-    third_nodes = ds.node.values[ds.triface_nodes.values[:, 2]]
-
-    # Get the lons/lats of the nodes
-    first_lons = ds.lon.values[first_nodes]
-    first_lats = ds.lat.values[first_nodes]
-    second_lons = ds.lon.values[second_nodes]
-    second_lats = ds.lat.values[second_nodes]
-    third_lons = ds.lon.values[third_nodes]
-    third_lats = ds.lat.values[third_nodes]
-
-    # Stack the coords, one polygon per line
-    polygons_per_line = np.vstack(
-        (
-            first_lons,
-            first_lats,
-            second_lons,
-            second_lats,
-            third_lons,
-            third_lats,
-            first_lons,
-            first_lats,
-        ),
-    ).T
-
-    # Re-stack the polygon coords. This time we should have 4 points per
-    polygons_coords = np.stack(
-        (
-            polygons_per_line[:, :2],
-            polygons_per_line[:, 2:4],
-            polygons_per_line[:, 4:6],
-            polygons_per_line[:, 6:8],
-        ),
-        axis=1,
-    )
-    # sanity check
-    if polygons_coords.shape[1:] != (4, 2):
-        raise ValueError("Something went wrong")
-
-    # generate Polygon instance
-    polygons = shapely.polygons(polygons_coords)
-    polygon = shapely.coverage_union_all(polygons)
-
-    # convert to GeoDataFrame
-    gdf = gpd.GeoDataFrame(geometry=[polygon])
-
-    logger.info("Polygon: generated")
-
-    return gdf
