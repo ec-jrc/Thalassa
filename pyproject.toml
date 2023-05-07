@@ -19,7 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    # Datashader 0.14.4 is not compatible with python 3.11
+    # As soon as a new release is made, we should be able to switch back support for 3.11
+    # "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.dependencies]

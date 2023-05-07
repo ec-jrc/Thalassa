@@ -27,7 +27,8 @@ jobs:
       matrix:
         # os: [ 'ubuntu-latest', 'macos-latest' ]
         os: [ 'ubuntu-latest' ]
-        python: [ '3.9', '3.10', '3.11' ]
+        # python: [ '3.9', '3.10', '3.11' ]
+        python: [ '3.9', '3.10' ]
     steps:
       - uses: actions/checkout@main
       - uses: actions/setup-python@main
