@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging.config
 import typing
 
+import geoviews as gv
+import holoviews as hv
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
@@ -164,3 +166,54 @@ def drop_elements_crossing_idl(
     indices_of_triface_nodes_crossing_idl = np.asarray(condition).nonzero()[0]
     ds = ds.drop_isel(triface=indices_of_triface_nodes_crossing_idl)
     return ds
+
+
+def get_bbox_from_raster(raster: gv.DynamicMap) -> hv.core.boundingregion.BoundingBox:
+    # XXX Even though they seem the same,
+    #       raster[()]
+    # and
+    #       raster.values[0]
+    # are not exactly the same. The latter one throws IndexErrors if you run
+    # it too soon after the creation of the raster!
+    image = raster[()]
+    bbox = image.bounds
+    return bbox
+
+
+def get_x_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+    aarect = bbox.aarect()
+    x_range = (aarect.left(), aarect.right())
+    return x_range
+
+
+def get_y_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+    aarect = bbox.aarect()
+    y_range = (aarect.bottom(), aarect.top())
+    return y_range
+
+
+def is_point_in_the_raster(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
+    """
+    Return ``True`` if the point is inside the mesh of the ``raster``, ``False`` otherwise.
+
+    Do notice that the zoom level and the size of the viewport are taken into account.
+    This means that if you change the zoom level of the raster, the return value
+    may change.
+
+    For example, let's use the mesh from STOFS and point ``(22, 40)`` which is located in
+    the Balkan Peninsula. if we execute  the following snippet on two different
+    jupyterlab cells, the return values are going to be ``True`` and ``False`` respectively,
+
+        # low resolution
+        stofs_raster.opts(width=200, height=200)
+        assert is_point_in_the_raster(stofs_raster, 22, 40)
+        # vs
+        # higher resolution
+        stofs_raster.opts(width=600, height=600)
+        assert not is_point_in_the_raster(stofs_raster, 22, 40)
+
+    """
+    raster_dataset = raster.values()[0].data
+    data_var_name = raster.ddims[-1].name
+    interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).data
+    return typing.cast(bool, ~np.isnan(interpolated))

@@ -153,38 +153,6 @@ def get_raster(
     return raster
 
 
-def get_bbox_from_raster(raster: gv.DynamicMap) -> hv.core.boundingregion.BoundingBox:
-    # XXX Even though they seem the same,
-    #       raster[()]
-    # and
-    #       raster.values[0]
-    # are not exactly the same. The latter one throws IndexErrors if you run
-    # it too soon after the creation of the raster!
-    image = raster[()]
-    bbox = image.bounds
-    return bbox
-
-
-def get_x_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
-    aarect = bbox.aarect()
-    x_range = (aarect.left(), aarect.right())
-    return x_range
-
-
-def get_y_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
-    aarect = bbox.aarect()
-    y_range = (aarect.bottom(), aarect.top())
-    return y_range
-
-
-def is_point_in_the_mesh(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
-    """Return `True` if the point is inside the mesh of the `raster`, `False` otherwise"""
-    raster_dataset = raster.values()[0].data
-    data_var_name = raster.ddims[-1].name
-    interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).values
-    return typing.cast(bool, ~np.isnan(interpolated))
-
-
 def _get_stream_timeseries(
     ds: xr.Dataset,
     variable: str,
@@ -200,7 +168,7 @@ def _get_stream_timeseries(
     ds = ds[["lon", "lat", variable]]
 
     def callback(x: float, y: float) -> hv.Curve:
-        if not is_point_in_the_mesh(raster=source_raster, lon=x, lat=y):
+        if not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y):
             # if the point is not inside the mesh, then omit the timeseries
             title = f"Lon={x:.3f} Lat={y:.3f}"
             plot = hv.Curve([])
