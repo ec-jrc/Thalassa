@@ -151,7 +151,7 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         # Define widgets
         self.dataset_file = pn.widgets.Select(
             name="Dataset file",
-            options=[""] + sorted(filter(normalization.can_be_inferred, glob.glob(DATA_GLOB))),
+            options=["", *sorted(filter(normalization.can_be_inferred, glob.glob(DATA_GLOB)))],
         )
         self.variable = pn.widgets.Select(name="Variable")
         self.layer = pn.widgets.Select(name="Layer")
@@ -167,7 +167,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
         self._sidebar.append(
             pn.Column(
                 pn.WidgetBox(
-                    # "##### Dataset",
                     self.dataset_file,
                     self.variable,
                     self.layer,
@@ -176,7 +175,6 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
                     self.show_mesh,
                 ),
                 pn.WidgetBox(
-                    # "##### Secondary plot",
                     self.show_timeseries,
                     self.show_stations,
                     self.show_animation,
@@ -249,14 +247,14 @@ class ThalassaUI:  # pylint: disable=too-many-instance-attributes
             variable = self.variable.value
             # handle layer
             if variable and "layer" in ds[variable].dims:
-                layers = ds.layer.values.tolist()
+                layers = ds.layer.to_numpy().tolist()
                 self.layer.param.set_param(options=layers, disabled=False)
             else:
                 self.layer.param.set_param(options=[], disabled=True)
             # handle time
             if variable and "time" in ds[variable].dims:
                 self.show_timeseries.param.set_param(disabled=False)
-                self.time.param.set_param(options=["max"] + list(ds.time.values), disabled=False)
+                self.time.param.set_param(options=["max", *ds.time.to_numpy()], disabled=False)
             else:
                 self.show_timeseries.param.set_param(disabled=True)
                 self.time.param.set_param(options=[], disabled=True)
