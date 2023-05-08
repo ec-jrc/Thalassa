@@ -195,9 +195,10 @@ def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
     # 2. We define a new variable and a new dimension which specifically address triangular elements
     # I'd rather avoid altering the values of the provided netcdf file therefore we go for option #2,
     # i.e. we create the `triface_nodes` variable.
-    if len(normalized_ds.max_no_vertices) == 4:
-        triface_nodes = utils.split_quads(normalized_ds.face_nodes.values)
-    else:
-        triface_nodes = normalized_ds.face_nodes.values
-    normalized_ds["triface_nodes"] = (("triface", "three"), triface_nodes)
+    if "triface_nodes" not in ds.data_vars:
+        if "max_no_vertices" in normalized_ds.dims and len(normalized_ds.max_no_vertices) == 4:
+            triface_nodes = utils.split_quads(normalized_ds.face_nodes.values)
+        else:
+            triface_nodes = normalized_ds.face_nodes.values
+        normalized_ds["triface_nodes"] = (("triface", "three"), triface_nodes)
     return normalized_ds
