@@ -25,25 +25,18 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.9"
-bokeh = "*"
 Cartopy = "*"
 datashader = "*"
 geopandas = "*"
 geoviews = "*"
 holoviews = "*"
-hvplot = "*"
-llvmlite = "*"
-netCDF4 = "*"
 # datashader has fixed the incompatibilities with numpy, but they haven't released a new package
 # As soon as datashader 1.4.5 gets released we should be able to remove the pin
 # https://github.com/holoviz/datashader/issues/1158
 numpy = "<1.24"
 pandas = "*"
 panel = "*"
-"ruamel.yaml" = "*"
-scipy = "*"
 shapely = "*"
-tornado = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
 
 [tool.poetry.group.dev.dependencies]
@@ -131,7 +124,7 @@ ignore = [
 [tool.coverage.run]
 plugins = ["covdefaults"]
 source = ["thalassa"]
-omit = ["thalassa/ui.py"]
+omit = []
 concurrency = [
   "multiprocessing",
   "thread",

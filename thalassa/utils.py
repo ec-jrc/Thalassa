@@ -11,19 +11,8 @@ import numpy.typing as npt
 import pandas as pd
 import shapely
 import xarray as xr
-from ruamel.yaml import YAML
-
-yaml = YAML(typ="safe", pure=True)
 
 logger = logging.getLogger(__name__)
-
-
-def setup_logging() -> None:
-    with open("config.yml", "rb") as fd:
-        config = yaml.load(fd.read())
-
-    logging.config.dictConfig(config["logging"])
-    logger.debug(logging.getLogger("thalassa").handlers)
 
 
 def generate_thalassa_ds(
