@@ -72,7 +72,6 @@ _ADCIRC_VARS = {
     "ibtype",
     "nbvv",
     "nvell",
-    "zeta",
 }
 # fmt: on
 
