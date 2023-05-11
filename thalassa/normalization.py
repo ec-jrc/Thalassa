@@ -38,7 +38,6 @@ _SCHISM_DIMS = {
     "nSCHISM_hgrid_edge",
     "nSCHISM_hgrid_face",
     "nSCHISM_hgrid_node",
-    "nSCHISM_vgrid_layers",
     "nMaxSCHISM_hgrid_face_nodes",
 }
 _SCHISM_VARS = {
@@ -82,7 +81,8 @@ def is_generic(ds: xr.Dataset) -> bool:
 
 
 def is_schism(ds: xr.Dataset) -> bool:
-    return _SCHISM_DIMS.issubset(ds.dims) and _SCHISM_VARS.issubset(ds.data_vars)
+    total_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
+    return _SCHISM_DIMS.issubset(ds.dims) and _SCHISM_VARS.issubset(total_vars)
 
 
 def is_pyposeidon(ds: xr.Dataset) -> bool:
@@ -132,13 +132,19 @@ def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
             "nSCHISM_hgrid_edge": "edge",
             "nSCHISM_hgrid_face": "face",
             "nSCHISM_hgrid_node": "node",
-            "nSCHISM_vgrid_layers": "layer",
             "SCHISM_hgrid_face_nodes": "face_nodes",
             "nMaxSCHISM_hgrid_face_nodes": "max_no_vertices",
             "SCHISM_hgrid_node_x": "lon",
             "SCHISM_hgrid_node_y": "lat",
         },
     )
+    if "nSCHISM_vgrid_layers" in ds.dims:
+        # I.e. OLD Schism IO or "merged" new IO
+        ds = ds.rename(
+            {
+                "nSCHISM_vgrid_layers": "layer",
+            },
+        )
     # SCHISM output uses one-based indices for `face_nodes`
     # Let's ensure that we use zero-based indices everywhere.
     ds["face_nodes"] -= 1
