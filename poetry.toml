@@ -1,5 +1,0 @@
-[installer]
-no-binary = [
-  "pygeos",
-  "shapely",
-]
