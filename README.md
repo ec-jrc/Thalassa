@@ -1,61 +1,70 @@
-Large Scale Sea level visualizations of unstructured mesh data
-===============================================================
+Thalassa
+========
 
-Thalassa is a library/application for visualizing large scale results of hydrodynamic simulations.
+Thalassa ia a library for visualizing unstructured mesh data.
 
+It builds upon [geoviews](https://geoviews.org/) and [datashader](https://datashader.org/)
+and can easily handle meshes with millions of nodes interactively.
 
+<!-- https://user-images.githubusercontent.com/411196/146007390-88e8cc59-9ae9-4a15-83fd-f7f1f2d724c2.mp4 -->
 
-https://user-images.githubusercontent.com/411196/146007390-88e8cc59-9ae9-4a15-83fd-f7f1f2d724c2.mp4
+Thalassa is currently supporting visualization of the output of the following solvers:
 
+- [Schism](https://github.com/schism-dev/schism)
+- [ADCIRC](https://adcirc.org/)
 
+Adding support for new solvers is relatively straight-forward.
 
-## Obtaining Data
+## Installation
 
-You will need some data to visualize. If you don't have any you can download a sample dataset
-created with [pyposeidon](https://github.com/ec-jrc/pyPoseidon/):
-
-```
-mkdir ./data
-wget -O data/dataset.nc https://static.techrad.eu/thalassa/dataset.nc
-```
-
-## Deploying on a server
+### PyPI
 
 1. Install the binary dependencies:
 
-- `python 3.9`
-- `proj < 8`
+- `python >= 3.9`
+- `geos`
 
-2. Install the python dependencies with
-
-```
-pip install -r requirements/requirements.txt
-```
-
-3. Run the panel server with:
+2. Install from PyPI with:
 
 ```
-panel serve ./run.py
+pip install thalassa
 ```
 
-For the record, `panel serve` is a thin wrapper around the [bokeh
-server](https://docs.bokeh.org/en/latest/docs/user_guide/server.html#).  It provides lots of
-command line options which can useful in various deployments scenarios.  Of particular interest
-might be `--num-procs` which spawns multiple workers and `--allow-websocket-origin`. Make sure to
-check the docs:
+### Conda
 
-- https://panel.holoviz.org/user_guide/Deploy_and_Export.html#launching-a-server-on-the-commandline
-- https://docs.bokeh.org/en/latest/docs/user_guide/server.html#basic-reverse-proxy-setup
-- `panel serve --help`
+You can also install using conda/mamba:
+
+```bash
+mamba install -y -c conda-forge thalassa
+```
+
+## Obtaining Data
+
+You will need some data to visualize. You can download sample datasets from the following links:
+
+- 2D Output from the [STOFS-2D Global]() model which uses ADCIRC from [here](https://noaa-gestofs-pds.s3.amazonaws.com/stofs_2d_glo.20230501/stofs_2d_glo.t00z.fields.cwl.nc) (12GB)
+- 3D Output from the [STOFS-3D Atlantic](https://noaa-nos-stofs3d-pds.s3.amazonaws.com/README.html) model which uses Schism 5.9 (old IO) from [here](https://noaa-nos-stofs3d-pds.s3.amazonaws.com/STOFS-3D-Atl-shadow-VIMS/20220430/schout_20220501.nc) (12GB)
+- 2D Output from the [STOFS-3D Atlantic](https://noaa-nos-stofs3d-pds.s3.amazonaws.com/README.html) model which uses Schism 5.10 (new IO) from [here](https://noaa-nos-stofs3d-pds.s3.amazonaws.com/STOFS-3D-Atl/stofs_3d_atl.20230501/stofs_3d_atl.t12z.fields.out2d_nowcast.nc) (3GB)
+
+## Thalassa-server
+
+[thalassa-server](https://github.com/oceanmodeling/thalassa-server) is an web-application leveraging the `thalassa` library
+and [panel](https://panel.holoviz.org/). Check-it out!
 
 ## Developing
 
 ### Prerequisites
 
-For managing dependencies we use poetry.
+For developing we are using [poetry](https://pre-commit.com/) and [pre-commit](https://pre-commit.com/).
+You can install both with [pipx](https://github.com/pypa/pipx):
 
 ```
+# poetry
 pipx install poetry
+pipx inject poetry poetry-dynamic-versioning
+pipx inject poetry poetry-plugin-export
+# pre-commit
+pipx install pre-commit
 ```
 
 ### Install dependencies
@@ -63,29 +72,9 @@ pipx install poetry
 Just run:
 
 ```
-poetry install
+make init
 ```
-
-and please make sure to also install the [pre-commit](https://pre-commit.com/) hooks:
-
-```
-pre-commit install
-```
-
-### Running Thalassa
-
-#### As a web application
-
-It should be as simple as:
-
-```
-panel serve ./run.py --autoreload
-```
-
-#### Inside jupyterlab
-
-Open the `Thalassa.ipynb` in jupyterlab
 
 ## License
 
-The project is released under the EUPL v1.2 license.
+The project is released under the EUPL v1.2 license which is compatible with GPL v3
