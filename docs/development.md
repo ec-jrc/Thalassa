@@ -21,4 +21,3 @@ Just run:
 ```
 make init
 ```
-

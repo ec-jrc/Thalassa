@@ -30,4 +30,3 @@ and [panel](https://panel.holoviz.org/). Check-it out!
 ## License
 
 The project is released under the EUPL v1.2 license which is compatible with GPL v3
-
