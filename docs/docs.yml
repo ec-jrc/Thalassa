@@ -1,0 +1,26 @@
+name: pp-docs
+
+channels:
+  - conda-forge
+
+dependencies:
+  - numpy
+  - pandas
+  - xarray
+  - rioxarray
+  - geopandas
+  - tqdm
+  - pyresample
+  - cartopy
+  - psutil
+  - gmsh
+  - python-gmsh
+  - f90nml
+  - netCDF4
+  - dask
+  - colorlog
+  - pygeos
+  - mkdocs
+  - mkdocs-material
+  - pymdown-extensions
+  - mkdocstrings

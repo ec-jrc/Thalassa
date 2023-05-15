@@ -1,0 +1,19 @@
+---
+
+name: Thalassa
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python>=3.9
+  - numpy<1.24
+  - pandas
+  - geos
+  - xarray
+  - datashader
+  - holoviews
+  - geoviews
+  - cartopy
+  - shapely
+  - black>=22.6.0
