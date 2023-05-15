@@ -7,13 +7,14 @@ channels:
 
 dependencies:
   - python>=3.9
+  - cartopy
+  - datashader
+  - fiona
+  - geopandas
+  - geos
+  - geoviews
+  - holoviews
   - numpy<1.24
   - pandas
-  - geos
-  - xarray
-  - datashader
-  - holoviews
-  - geoviews
-  - cartopy
   - shapely
-  - black>=22.6.0
+  - xarray
