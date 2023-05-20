@@ -1,0 +1,10 @@
+name: thalassa
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.10
+  - thalassa
+  - jupyterlab<4
+  - pyviz_comms
