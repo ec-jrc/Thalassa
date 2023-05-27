@@ -18,3 +18,8 @@ dependencies:
   - pandas
   - shapely
   - xarray
+  - mkdocs
+  - mkdocs-material
+  - mkdocstrings
+  - mkdocstrings-python
+  - pymdown-extensions
