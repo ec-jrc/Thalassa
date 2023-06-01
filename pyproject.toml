@@ -18,9 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    # Datashader 0.14.4 is not compatible with python 3.11
-    # As soon as a new release is made, we should be able to switch back support for 3.11
-    # "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.dependencies]
@@ -31,10 +29,7 @@ geopandas = "*"
 geoviews = "*"
 fiona = ">=1.8"
 holoviews = "*"
-# datashader has fixed the incompatibilities with numpy, but they haven't released a new package
-# As soon as datashader 0.14.5 gets released we should be able to remove the pin
-# https://github.com/holoviz/datashader/issues/1158
-numpy = "<1.24"
+numpy = "*"
 pandas = "*"
 shapely = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
