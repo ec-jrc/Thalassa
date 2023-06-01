@@ -46,7 +46,7 @@ def test_main_api():
 @pytest.mark.parametrize("variable", [None, "zeta"])
 def test_create_trimesh(timestamp, variable):
     ds = api.open_dataset(ADCIRC_NC)
-    if timestamp == timestamp:
+    if timestamp == "timestamp":
         timestamp = ds.time[0]
 
     trimesh = api.create_trimesh(ds, variable=variable, timestamp=timestamp)

@@ -106,13 +106,15 @@ def create_trimesh(
         columns.append(variable)
     if layer is not None:
         ds = ds.isel(layer=layer)
-    if timestamp == "max":
-        points_df = ds[columns].max("time").to_dataframe()
-    elif timestamp == "min":
-        points_df = ds[columns].min("time").to_dataframe()
-    elif timestamp:
-        points_df = ds.sel({"time": timestamp})[columns].to_dataframe().drop(columns="time")
+    if variable and timestamp:
+        if timestamp == "max":
+            points_df = ds[columns].max("time").to_dataframe()
+        elif timestamp == "min":
+            points_df = ds[columns].min("time").to_dataframe()
+        else:
+            points_df = ds.sel({"time": timestamp})[columns].to_dataframe().drop(columns="time")
     else:
+        # Maybe throw an warning if user passed a timestamp but no variable?
         points_df = ds[columns].to_dataframe()
     points_df = points_df.reset_index(drop=True)
     if variable:
