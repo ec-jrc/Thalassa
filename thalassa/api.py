@@ -121,7 +121,7 @@ def create_trimesh(
         points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
     else:
         points_gv = gv.Points(points_df, kdims=["lon", "lat"])
-    trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv))
+    trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
     return trimesh
 
 
@@ -177,7 +177,7 @@ def get_raster(
         clabel=clabel,
         colorbar=True,
         clim=(clim_min, clim_max),
-        title=title,
+        title=title or trimesh.name,
         tools=["hover"],
     )
     return raster
