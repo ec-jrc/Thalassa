@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.9, <4.0"
 Cartopy = "*"
 datashader = "*"
 geopandas = "*"
@@ -54,6 +54,7 @@ mkdocs-material = "*"
 mkdocstrings = "*"
 mkdocstrings-python = "*"
 pymdown-extensions = "*"
+black = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true

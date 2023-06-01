@@ -6,6 +6,7 @@ import os
 import typing
 import warnings
 from functools import reduce
+from typing import Literal
 
 import geoviews as gv
 import holoviews as hv
@@ -48,12 +49,14 @@ def open_dataset(
     **kwargs: dict[str, typing.Any],
 ) -> xr.Dataset:
     """
-    Open the file specified in ``path`` using ``xarray`` and return an `xr.Dataset``
+    Open the file specified in ``path`` using ``xarray`` and return an ``xr.Dataset``
 
-    If ``normalize`` is ``True``, then the file is converted/normalized to the ``Thalassa`` schema.
-    Normalization is currently only supported for ``SCHISM`` and ``ADCIRC`` netcdf files.
+    Parameters:
+        path: The path to the dataset file (netCDF, zarr, grib)
+        normalize: Boolean flag indicating whether the dataset should be converted/normalized to the ``Thalassa`` schema.
+            Normalization is currently only supported for ``SCHISM`` and ``ADCIRC`` netcdf files.
+        kwargs: The ``kwargs`` are being passed through to ``xr.open_dataset``.
 
-    ``kwargs`` are being passed to ``xr.open_dataset``
     """
     default_kwargs: dict[str, typing.Any] = dict(
         mask_and_scale=True,
@@ -77,12 +80,27 @@ def get_dtf() -> DatetimeTickFormatter:
     return dtf
 
 
+MAX: typing.Final = "max"
+MIN: typing.Final = "min"
+
+
 def create_trimesh(
     ds: xr.Dataset,
     variable: str | None = None,
-    timestamp: str | pd.Timestamp | None = None,
+    timestamp: Literal["max", "min"] | pd.Timestamp | None = None,
     layer: int | None = None,
 ) -> gv.TriMesh:
+    """
+    Create a ``gv.TriMesh`` object from the provided dataset.
+
+    Parameters:
+        ds: The dataset containing the variable we want to visualize
+        variable: The data variable we want to visualize
+        timestamp: The timestamp which we want to visualize. It can be ``max``, ``min`` or a specific
+            timestamp. If no ``variable`` is given, then ``timestamp`` is ignored.
+        layer: The "layer" of the ``variable``. It only makes sense in 3D models.
+
+    """
     columns = ["lon", "lat"]
     if variable is not None:
         columns.append(variable)
@@ -105,8 +123,15 @@ def create_trimesh(
     return trimesh
 
 
-def get_tiles() -> gv.Tiles:
-    tiles = gv.WMTS("http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png")
+def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> gv.Tiles:
+    """
+    Return a WMTS using the provided `url`.
+
+    Parameters:
+        url: The URL of the Tiling Service. It defaults to Openstreetmap.
+
+    """
+    tiles = gv.WMTS(url)
     return tiles
 
 
@@ -115,6 +140,7 @@ def get_wireframe(
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
 ) -> gv.DynamicMap:
+    """Return a ``DynamicMap`` with a wireframe of the mesh."""
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
     if x_range:
         kwargs["x_range"] = x_range
@@ -133,6 +159,11 @@ def get_raster(
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
 ) -> gv.DynamicMap:
+    """
+    Return a ``DynamicMap`` with a rasterized image of the variable.
+
+    Uses ``datashader`` behind the scenes.
+    """
     kwargs = dict(element=trimesh, precompute=True)
     if x_range:
         kwargs["x_range"] = x_range

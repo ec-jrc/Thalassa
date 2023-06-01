@@ -4,23 +4,20 @@ channels:
   - conda-forge
 
 dependencies:
-  - numpy
-  - pandas
-  - xarray
-  - rioxarray
-  - geopandas
-  - tqdm
-  - pyresample
+  - python>=3.9
   - cartopy
-  - psutil
-  - gmsh
-  - python-gmsh
-  - f90nml
-  - netCDF4
-  - dask
-  - colorlog
-  - pygeos
+  - datashader
+  - fiona
+  - geopandas
+  - geos
+  - geoviews
+  - holoviews
+  - numpy<1.24
+  - pandas
+  - shapely
+  - xarray
+  # docs
   - mkdocs
   - mkdocs-material
-  - pymdown-extensions
   - mkdocstrings
+  - pymdown-extensions

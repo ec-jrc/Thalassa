@@ -68,7 +68,7 @@ repos:
         args: ["--without-hashes", "--only", "main", "-f", "requirements.txt", "-o", "requirements/requirements.txt"]
       - id: "poetry-export"
         name: 'poetry export dev'
-        args: ["--without-hashes", "--with", "dev", "--with", "docs", "--with", "jupyter", "-f", "requirements.txt", "-o", "requirements/requirements-dev.txt"]
+        args: ["--without-hashes", "--with", "dev", "--with", "docs", "-f", "requirements.txt", "-o", "requirements/requirements-dev.txt"]
 
   - repo: "local"
     hooks:

@@ -37,12 +37,32 @@ markdown_extensions:
   - toc:
       permalink: true
 
+watch:
+  - "docs"
+  - "thalassa"
+
 plugins:
   - "search"
   - "mkdocstrings":
+      default_handler: python
       handlers:
         python:
           options:
+            # General
+            allow_inspection: true
+            show_source: false
+            # Headings
+            show_root_toc_entry: true
+            show_root_full_path: true
+            show_object_full_path: true
+            show_root_members_full_path: true
+            # members
+            members_order: "source"
+
+            annotations_path: "brief"
+            show_signature: true
+            show_signature_annotations: true
+            separate_signature: true
+            line_length: 88
+            signature_crossrefs: true
             show_root_heading: true
-            show_object_full_path: false
-            show_root_members_full_path: false

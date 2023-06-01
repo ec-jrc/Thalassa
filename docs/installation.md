@@ -4,8 +4,8 @@
 
 1. Install the binary dependencies:
 
-- `python >= 3.9`
-- `geos`
+    - `python >= 3.9`
+    - `geos`
 
 2. Install from PyPI with:
 

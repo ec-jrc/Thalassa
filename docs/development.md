@@ -14,9 +14,9 @@ pipx inject poetry poetry-plugin-export
 pipx install pre-commit
 ```
 
-### Install dependencies
+### Setup dev environment
 
-Just run:
+You set up the dev environment with:
 
 ```
 make init
