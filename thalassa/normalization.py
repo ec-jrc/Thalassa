@@ -190,6 +190,7 @@ NORMALIZE_DISPATCHER = {
 
 
 def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
+    logger.debug("Dataset normalization: Started")
     fmt = infer_format(ds)
     normalizer_func = NORMALIZE_DISPATCHER[fmt]
     normalized_ds = normalizer_func(ds)
@@ -206,4 +207,5 @@ def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
         else:
             triface_nodes = normalized_ds.face_nodes.values
         normalized_ds["triface_nodes"] = (("triface", "three"), triface_nodes)
+    logger.debug("Dataset normalization: Finished")
     return normalized_ds

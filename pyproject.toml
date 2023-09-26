@@ -23,13 +23,17 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.9, <4.0"
+bokeh = ">=3.0"
 Cartopy = "*"
+dask = "*"
 datashader = "*"
 geopandas = "*"
-geoviews = "*"
-fiona = ">=1.8"
+geoviews = ">=1.10"
 holoviews = "*"
+ipywidgets = "*"
+numba = ">0.52"
 numpy = "*"
+numpy-indexed = "*"
 pandas = "*"
 shapely = "*"
 xarray = {version = "*", extras = ["io", "accel"]}

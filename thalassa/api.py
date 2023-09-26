@@ -6,7 +6,6 @@ import os
 import typing
 import warnings
 from functools import reduce
-from typing import Literal
 
 import geoviews as gv
 import holoviews as hv
@@ -80,15 +79,9 @@ def get_dtf() -> DatetimeTickFormatter:
     return dtf
 
 
-MAX: typing.Final = "max"
-MIN: typing.Final = "min"
-
-
 def create_trimesh(
     ds: xr.Dataset,
     variable: str | None = None,
-    timestamp: Literal["max", "min"] | pd.Timestamp | None = None,
-    layer: int | None = None,
 ) -> gv.TriMesh:
     """
     Create a ``gv.TriMesh`` object from the provided dataset.
@@ -96,27 +89,11 @@ def create_trimesh(
     Parameters:
         ds: The dataset containing the variable we want to visualize
         variable: The data variable we want to visualize
-        timestamp: The timestamp which we want to visualize. It can be ``max``, ``min`` or a specific
-            timestamp. If no ``variable`` is given, then ``timestamp`` is ignored.
-        layer: The "layer" of the ``variable``. It only makes sense in 3D models.
-
     """
     columns = ["lon", "lat"]
     if variable is not None:
         columns.append(variable)
-    if layer is not None:
-        ds = ds.isel(layer=layer)
-    if variable and timestamp:
-        if timestamp == "max":
-            points_df = ds[columns].max("time").to_dataframe()
-        elif timestamp == "min":
-            points_df = ds[columns].min("time").to_dataframe()
-        else:
-            points_df = ds.sel({"time": timestamp})[columns].to_dataframe().drop(columns="time")
-    else:
-        # Maybe throw an warning if user passed a timestamp but no variable?
-        points_df = ds[columns].to_dataframe()
-    points_df = points_df.reset_index(drop=True)
+    points_df = ds[columns].to_dataframe().reset_index(drop=True)
     if variable:
         points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
     else:
@@ -138,23 +115,24 @@ def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> g
 
 
 def get_wireframe(
-    trimesh: gv.TriMesh,
-    x_range: tuple[float, float] | None = None,
-    y_range: tuple[float, float] | None = None,
+    ds_or_trimesh: gv.TriMesh | xr.Dataset,
 ) -> gv.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
+    if not isinstance(ds_or_trimesh, gv.TriMesh):
+        trimesh = create_trimesh(ds=ds_or_trimesh)
+    else:
+        trimesh = ds_or_trimesh
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
-    if x_range:
-        kwargs["x_range"] = x_range
-    if y_range:
-        kwargs["y_range"] = y_range
-    wireframe = dynspread(rasterize(**kwargs)).opts(tools=[], cmap=["black"])
+    wireframe = rasterize(**kwargs).opts(tools=["hover"], cmap=["black"], title="Mesh")
+    wireframe = dynspread(wireframe)
     return wireframe
 
 
 def get_raster(
     trimesh: gv.TriMesh,
     title: str = "",
+    cmap: str = "plasma",
+    colorbar: bool = True,
     clabel: str = "",
     clim_min: float | None = None,
     clim_max: float | None = None,
@@ -173,9 +151,9 @@ def get_raster(
         kwargs["y_range"] = y_range
     logger.debug("rasterize kwargs: %s", kwargs)
     raster = rasterize(**kwargs).opts(
-        cmap="viridis",
+        cmap=cmap,
         clabel=clabel,
-        colorbar=True,
+        colorbar=colorbar,
         clim=(clim_min, clim_max),
         title=title or trimesh.name,
         tools=["hover"],

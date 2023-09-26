@@ -8,11 +8,48 @@ import geoviews as gv
 import holoviews as hv
 import numpy as np
 import numpy.typing as npt
+import numpy_indexed as npi
 import pandas as pd
 import shapely
 import xarray as xr
 
 logger = logging.getLogger(__name__)
+
+GLOBAL_BBOX = shapely.box(-180, -90, 180, 90)
+
+
+def resolve_bbox(
+    bbox: shapely.Polygon | tuple[float, float, float, float] = GLOBAL_BBOX,
+) -> shapely.Polygon:
+    if isinstance(bbox, tuple):
+        bbox = shapely.box(*bbox)
+    return bbox
+
+
+def crop(
+    ds: xr.Dataset,
+    bbox: shapely.Polygon | tuple[float, float, float, float],
+) -> xr.Dataset:
+    bbox = resolve_bbox(bbox)
+    indices_of_nodes_in_bbox = np.where(
+        True
+        & (ds.lat >= bbox.bounds[1])
+        & (ds.lat <= bbox.bounds[3])
+        & (ds.lon >= bbox.bounds[0])
+        & (ds.lon <= bbox.bounds[2]),
+    )[0]
+    indices_of_triface_nodes_in_bbox = np.where(
+        ds.triface_nodes.isin(indices_of_nodes_in_bbox).all(axis=1),
+    )[0]
+    ds = ds.isel(node=indices_of_nodes_in_bbox, triface=indices_of_triface_nodes_in_bbox)
+    remapped_nodes = np.arange(len(indices_of_nodes_in_bbox))
+    remapped_triface_nodes = np.c_[
+        npi.remap(ds.triface_nodes[:, 0], indices_of_nodes_in_bbox, remapped_nodes),
+        npi.remap(ds.triface_nodes[:, 1], indices_of_nodes_in_bbox, remapped_nodes),
+        npi.remap(ds.triface_nodes[:, 2], indices_of_nodes_in_bbox, remapped_nodes),
+    ]
+    ds["triface_nodes"] = (("triface", "three"), remapped_triface_nodes)
+    return ds
 
 
 def generate_thalassa_ds(

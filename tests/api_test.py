@@ -17,7 +17,7 @@ def test_main_api():
     assert normalization.is_generic(ds)
 
     # Create objects
-    trimesh = api.create_trimesh(ds, variable=variable, timestamp=ds.time[0])
+    trimesh = api.create_trimesh(ds.sel(time=ds.time[0]), variable=variable)
     wireframe = api.get_wireframe(trimesh)
     raster = api.get_raster(trimesh)
     tap_ts = api.get_tap_timeseries(ds, variable, raster)
@@ -34,22 +34,10 @@ def test_main_api():
     hv.render(pointer_ts, backend="bokeh")
 
 
-@pytest.mark.parametrize(
-    "timestamp",
-    [
-        None,
-        "timestamp",
-        "max",
-        "min",
-    ],
-)
 @pytest.mark.parametrize("variable", [None, "zeta"])
-def test_create_trimesh(timestamp, variable):
+def test_create_trimesh(variable):
     ds = api.open_dataset(ADCIRC_NC)
-    if timestamp == "timestamp":
-        timestamp = ds.time[0]
-
-    trimesh = api.create_trimesh(ds, variable=variable, timestamp=timestamp)
+    trimesh = api.create_trimesh(ds, variable=variable)
     assert isinstance(trimesh, gv.TriMesh)
 
 
