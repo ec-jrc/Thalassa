@@ -23,7 +23,6 @@ class THALASSA_FORMATS(enum.Enum):
 
 # fmt: off
 _GENERIC_DIMS = {
-    "time",
     "node",
     "triface",
     "three",
@@ -34,7 +33,6 @@ _GENERIC_VARS = {
     "triface_nodes",
 }
 _SCHISM_DIMS = {
-    "time",
     "nSCHISM_hgrid_edge",
     "nSCHISM_hgrid_face",
     "nSCHISM_hgrid_node",
@@ -46,7 +44,6 @@ _SCHISM_VARS = {
     "SCHISM_hgrid_face_nodes",
 }
 _PYPOSEIDON_DIMS = {
-    "time",
     "nSCHISM_hgrid_face",
     "nSCHISM_hgrid_node",
     "nMaxSCHISM_hgrid_face_nodes",
@@ -57,7 +54,6 @@ _PYPOSEIDON_VARS = {
     "SCHISM_hgrid_face_nodes",
 }
 _ADCIRC_DIMS = {
-    "time",
     "node",
     "nele",
     "nvertex",
