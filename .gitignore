@@ -150,3 +150,6 @@ data.bak/
 data_/
 
 .config_jupyter/
+
+*.zarr/
+*.nc
