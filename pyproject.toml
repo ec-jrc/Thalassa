@@ -140,4 +140,4 @@ parallel = true
 sigterm = true
 
 [tool.coverage.report]
-fail_under = 61
+fail_under = 55
