@@ -46,7 +46,7 @@ def plot(
     if bbox:
         ds = utils.crop(ds, bbox)
     trimesh = api.create_trimesh(ds=ds, variable=variable)
-    raster = api.get_raster_from_trimesh(
+    raster = api.get_raster(
         trimesh=trimesh,
         x_range=x_range,
         y_range=y_range,

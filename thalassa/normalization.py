@@ -61,16 +61,9 @@ _ADCIRC_DIMS = {
     "node",
     "nele",
     "nvertex",
-    "mesh",
-    "nbou",
 }
 _ADCIRC_VARS = {
-    "adcirc_mesh",
-    "depth",
     "element",
-    "ibtype",
-    "nbvv",
-    "nvell",
 }
 # fmt: on
 
