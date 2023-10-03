@@ -64,3 +64,18 @@ def plot(
     else:
         overlay = hv.Overlay((tiles, raster))
     return overlay.collate()
+
+
+def plot_ts(
+    ds: xr.Dataset,
+    variable: str,
+    source_plot: gv.DynamicMap,
+) -> gv.DynamicMap:
+    """
+    Return an `hv.Curve` with the full timeseries of a specific node.
+
+    The node is selected by clicking on `source_plot`.
+    """
+    ds = normalization.normalize_dataset(ds)
+    ts = api.get_tap_timeseries(ds, variable, source_plot._raster)
+    return ts
