@@ -27,6 +27,7 @@ bokeh = ">=3.0"
 Cartopy = "*"
 dask = "*"
 datashader = "*"
+decorator = "*"
 geopandas = "*"
 geoviews = ">=1.10"
 holoviews = "*"
@@ -35,7 +36,9 @@ numba = ">0.52"
 numpy = "*"
 numpy-indexed = "*"
 pandas = "*"
+scipy = "*"
 shapely = "*"
+types-decorator = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
 
 [tool.poetry.group.dev.dependencies]

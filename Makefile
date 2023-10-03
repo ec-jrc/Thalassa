@@ -32,3 +32,6 @@ exec_notebooks:
 deps:
 	pre-commit run poetry-lock -a
 	pre-commit run poetry-export -a
+
+docs:
+	mkdocs serve

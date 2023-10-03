@@ -1,6 +1,8 @@
 # Reference
 
-::: thalassa.api
+::: thalassa
+
+<!-- ::: thalassa.api -->
 
 <!-- ::: thalassa.utils -->
 <!---->
