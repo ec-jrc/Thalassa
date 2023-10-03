@@ -191,7 +191,10 @@ def _get_stream_timeseries(
             )
         # setup hover
         hover = HoverTool(
-            tooltips=[("time", "@time{%F %T}"), (f"{variable}", f"@{variable}")],
+            tooltips=[
+                ("time", "@time{%F %T}"),
+                (f"{variable}", f"@{variable}"),
+            ],
             formatters={
                 "@time": "datetime",
             },
