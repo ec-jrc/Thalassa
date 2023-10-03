@@ -19,6 +19,15 @@ def plot_mesh(
     bbox: shapely.Polygon | None = None,
     title: str = "Mesh",
 ) -> gv.DynamicMap:
+    """
+    Plot the mesh of the dataset
+
+    Parameters:
+        ds: The dataset whose mesh we want to visualize.
+        bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
+        title: The title of the plot
+
+    """
     ds = normalization.normalize_dataset(ds)
     if bbox:
         ds = utils.crop(ds, bbox)
