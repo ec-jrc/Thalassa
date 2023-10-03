@@ -73,9 +73,10 @@ def plot(
     ds = normalization.normalize(ds)
     if bbox:
         ds = utils.crop(ds, bbox)
-    trimesh = api.create_trimesh(ds=ds, variable=variable)
+    trimesh = api.create_trimesh(ds_or_trimesh=ds, variable=variable)
     raster = api.get_raster(
-        trimesh=trimesh,
+        ds_or_trimesh=trimesh,
+        variable=variable,
         x_range=x_range,
         y_range=y_range,
         cmap=cmap,
@@ -86,12 +87,15 @@ def plot(
         clabel=clabel,
     )
     tiles = api.get_tiles()
+    components = [tiles, raster]
     if show_mesh:
-        mesh = api.get_wireframe(ds_or_trimesh=trimesh)
-        overlay = hv.Overlay((tiles, raster, mesh))
-    else:
-        overlay = hv.Overlay((tiles, raster))
-    return overlay.collate()
+        mesh = api.get_wireframe(ds)
+        components.append(mesh)
+    overlay = hv.Overlay(components)
+    dmap = overlay.collate()
+    # Keep a reference of the raster DynamicMap, in order to be able to retrieve it from plot_ts
+    dmap._raster = raster
+    return dmap
 
 
 def plot_ts(

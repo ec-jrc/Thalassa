@@ -80,16 +80,22 @@ def get_dtf() -> DatetimeTickFormatter:
 
 
 def create_trimesh(
-    ds: xr.Dataset,
+    ds_or_trimesh: gv.TriMesh | xr.Dataset,
     variable: str | None = None,
 ) -> gv.TriMesh:
     """
     Create a ``gv.TriMesh`` object from the provided dataset.
 
     Parameters:
-        ds: The dataset containing the variable we want to visualize
+        ds_or_trimesh: The dataset containing the variable we want to visualize.
+            If a trimesh object is passed, then return it immediately.
         variable: The data variable we want to visualize
     """
+    if isinstance(ds_or_trimesh, gv.TriMesh):
+        # This is already a trimesh, nothing to do
+        return ds_or_trimesh
+    # create the trimesh object
+    ds = ds_or_trimesh
     columns = ["lon", "lat"]
     if variable is not None:
         columns.append(variable)
@@ -118,10 +124,7 @@ def get_wireframe(
     ds_or_trimesh: gv.TriMesh | xr.Dataset,
 ) -> gv.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
-    if not isinstance(ds_or_trimesh, gv.TriMesh):
-        trimesh = create_trimesh(ds=ds_or_trimesh)
-    else:
-        trimesh = ds_or_trimesh
+    trimesh = create_trimesh(ds_or_trimesh)
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
     wireframe = rasterize(**kwargs).opts(tools=["hover"], cmap=["black"], title="Mesh")
     wireframe = dynspread(wireframe)
@@ -129,7 +132,8 @@ def get_wireframe(
 
 
 def get_raster(
-    trimesh: gv.TriMesh,
+    ds_or_trimesh: gv.TriMesh | xr.Dataset,
+    variable: str | None = None,
     title: str = "",
     cmap: str = "plasma",
     colorbar: bool = True,
@@ -144,6 +148,7 @@ def get_raster(
 
     Uses ``datashader`` behind the scenes.
     """
+    trimesh = create_trimesh(ds_or_trimesh=ds_or_trimesh, variable=variable)
     kwargs = dict(element=trimesh, precompute=True)
     if x_range:
         kwargs["x_range"] = x_range
