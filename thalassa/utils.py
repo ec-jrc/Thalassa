@@ -30,6 +30,13 @@ def crop(
     ds: xr.Dataset,
     bbox: shapely.Polygon | tuple[float, float, float, float],
 ) -> xr.Dataset:
+    """
+    Crop the dataset using the provided `bbox`
+
+    Parameters:
+        ds: The dataset we want to crop.
+        bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
+    """
     bbox = resolve_bbox(bbox)
     indices_of_nodes_in_bbox = np.where(
         True
