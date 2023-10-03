@@ -56,7 +56,7 @@ def plot_mesh(
 
 def plot(
     ds: xr.Dataset,
-    variable: str = "max_elev",
+    variable: str,
     bbox: shapely.Polygon | None = None,
     title: str = "",
     cmap: str = "plasma",
