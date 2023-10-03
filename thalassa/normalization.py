@@ -179,6 +179,12 @@ NORMALIZE_DISPATCHER = {
 
 
 def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Normalize the `dataset` i.e. convert it to the "Thalassa Schema".
+
+    Parameters:
+        ds: The dataset we want to convert.
+    """
     logger.debug("Dataset normalization: Started")
     fmt = infer_format(ds)
     normalizer_func = NORMALIZE_DISPATCHER[fmt]
