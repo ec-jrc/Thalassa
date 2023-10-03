@@ -178,7 +178,7 @@ NORMALIZE_DISPATCHER = {
 }
 
 
-def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
+def normalize(ds: xr.Dataset) -> xr.Dataset:
     """
     Normalize the `dataset` i.e. convert it to the "Thalassa Schema".
 

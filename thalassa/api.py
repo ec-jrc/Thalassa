@@ -65,7 +65,7 @@ def open_dataset(
     with warnings.catch_warnings(record=True):
         ds = xr.open_dataset(path, **(default_kwargs | kwargs))  # type: ignore[arg-type]
     if normalize:
-        ds = normalization.normalize_dataset(ds)
+        ds = normalization.normalize(ds)
     return ds
 
 

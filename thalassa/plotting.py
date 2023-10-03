@@ -28,7 +28,7 @@ def plot_mesh(
         title: The title of the plot
 
     """
-    ds = normalization.normalize_dataset(ds)
+    ds = normalization.normalize(ds)
     if bbox:
         ds = utils.crop(ds, bbox)
     tiles = api.get_tiles()
@@ -104,6 +104,6 @@ def plot_ts(
 
     The node is selected by clicking on `source_plot`.
     """
-    ds = normalization.normalize_dataset(ds)
+    ds = normalization.normalize(ds)
     ts = api.get_tap_timeseries(ds, variable, source_plot._raster)
     return ts
