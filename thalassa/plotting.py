@@ -14,6 +14,23 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 
+def _sanity_check(ds: xr.Dataset, variable: str) -> None:
+    dims = ds[variable].dims
+    if "node" not in dims:
+        msg = (
+            f"Only variables whose dimensions include 'node' can be plotted. "
+            f"The dimensions of variable '{variable}' are: {ds[variable].dims}"
+        )
+        raise ValueError(msg)
+    if dims != ("node",):
+        msg = (
+            f"In order to plot variable '{variable}', the dataset must be filtered in such a way "
+            f"that the only dimension of '{variable}' is `node`. Please use `.sel()` or `.isel()` "
+            f"to filter the dataset accordingly. Current dimensions are: {ds[variable].dims}"
+        )
+        raise ValueError(msg)
+
+
 def plot_mesh(
     ds: xr.Dataset,
     bbox: shapely.Polygon | None = None,
@@ -71,6 +88,7 @@ def plot(
 
     """
     ds = normalization.normalize(ds)
+    _sanity_check(ds=ds, variable=variable)
     if bbox:
         ds = utils.crop(ds, bbox)
     trimesh = api.create_trimesh(ds_or_trimesh=ds, variable=variable)
