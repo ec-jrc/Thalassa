@@ -27,7 +27,6 @@ bokeh = ">=3.0"
 Cartopy = "*"
 dask = "*"
 datashader = "*"
-decorator = "*"
 geopandas = "*"
 geoviews = ">=1.10"
 holoviews = "*"
@@ -38,7 +37,6 @@ numpy-indexed = "*"
 pandas = "*"
 scipy = "*"
 shapely = "*"
-types-decorator = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
 
 [tool.poetry.group.dev.dependencies]
@@ -48,7 +46,7 @@ pytest = "*"
 pytest-cov = ">=3.0"
 ipykernel = "*"
 ipython = "*"
-nbconvert = "*"
+papermill = "*"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"
