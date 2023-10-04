@@ -28,14 +28,24 @@ def resolve_bbox(
 
 def crop(
     ds: xr.Dataset,
-    bbox: shapely.Polygon | tuple[float, float, float, float],
+    bbox: shapely.Polygon,
 ) -> xr.Dataset:
     """
-    Crop the dataset using the provided `bbox`
+    Crop the dataset using the provided `bbox`.
+
+    Examples:
+        ``` python
+        import thalassa
+        import shapely
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        bbox = shapely.box(0, 0, 1, 1)
+        ds = thalassa.crop(ds, bbox)
+        ```
 
     Parameters:
         ds: The dataset we want to crop.
-        bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
+        bbox: A Shapely polygon whose boundary will be used to crop `ds`.
     """
     bbox = resolve_bbox(bbox)
     indices_of_nodes_in_bbox = np.where(

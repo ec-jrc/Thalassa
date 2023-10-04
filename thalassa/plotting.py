@@ -39,10 +39,29 @@ def plot_mesh(
     """
     Plot the mesh of the dataset
 
+    Examples:
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot_mesh(ds)
+        ```
+
+        If we want to on-the-fly crop the dataset we can pass `bbox`, too:
+
+        ``` python
+        import shapely
+        import thalassa
+
+        bbox = shapely.box(0, 0, 1, 1)
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot_mesh(ds, bbox=bbox)
+        ```
+
     Parameters:
-        ds: The dataset whose mesh we want to visualize.
+        ds: The dataset whose mesh we want to visualize. It must adhere to the "thalassa schema"
         bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
-        title: The title of the plot
+        title: The title of the plot.
 
     """
     ds = normalization.normalize(ds)
@@ -71,9 +90,48 @@ def plot(
     """
     Return the plot of the specified `variable`.
 
+    Examples:
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot(ds, variable="zeta_max")
+        ```
+
+        When we plot time dependent variables we need to filter the data
+        in such a way that `time` is no longer a dimension.
+        For example to plot the map of the first timestamp of variable `zeta`:
+
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot(ds.isel(time=0), variable="zeta")
+        ```
+
+        Often, it is quite useful to limit the range of the colorbar:
+
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot(ds, variable="zeta", clim_min=1, clim_max=3, clabel="meter")
+        ```
+
+        If we want to on-the-fly crop the dataset we can pass `bbox`, too:
+
+        ``` python
+        import shapely
+        import thalassa
+
+        bbox = shapely.box(0, 0, 1, 1)
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot(ds, variable="depth", bbox=bbox)
+        ```
+
     Parameters:
-        ds: The dataset which will get rendered. It must adhere to the "thalassa schema"
-        variable: The `dataset`'s variable which we want to visualize.
+        ds: The dataset which will get visualized. It must adhere to the "thalassa schema".
+        variable: The dataset's variable which we want to visualize.
         bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
         title: The title of the plot. Defaults to `variable`.
         cmap: The colormap to use.
@@ -122,9 +180,26 @@ def plot_ts(
     source_plot: gv.DynamicMap,
 ) -> gv.DynamicMap:
     """
-    Return an `hv.Curve` with the full timeseries of a specific node.
+    Return a plot with the full timeseries of a specific node.
 
-    The node is selected by clicking on `source_plot`.
+    The node that will be visualized is selected by clicking on `source_plot`.
+
+    Examples:
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        main_plot = thalassa.plot(ds, variable="zeta_max")
+        ts_plot = thalassa.plot_ts(ds, variable="zeta", source_plot=main_plot)
+
+        (main_plot.opts(width=600) + ts_plot.opts(width=600)).cols(1)
+        ```
+
+    Parameters:
+        ds: The dataset which will get visualized. It must adhere to the "thalassa schema"
+        variable: The dataset's variable which we want to visualize.
+        source_plot: The plot instance which be used to select the coordinates of the node.
+            Normally, you get this instance by calling `plot()`.
     """
     ds = normalization.normalize(ds)
     ts = api.get_tap_timeseries(ds, variable, source_plot._raster)
