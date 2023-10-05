@@ -24,7 +24,6 @@ Adding support for new solvers is relatively straight-forward.
 1. Install the binary dependencies:
 
 - `python >= 3.9`
-- `geos`
 
 2. Install from PyPI with:
 
