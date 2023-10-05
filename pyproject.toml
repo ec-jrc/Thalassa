@@ -35,6 +35,7 @@ numba = ">0.52"
 numpy = "*"
 numpy-indexed = "*"
 pandas = "*"
+scipy = "*"
 shapely = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
 
@@ -45,7 +46,7 @@ pytest = "*"
 pytest-cov = ">=3.0"
 ipykernel = "*"
 ipython = "*"
-nbconvert = "*"
+papermill = "*"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"

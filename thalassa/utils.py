@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging.config
-import typing
+import typing as T
 
 import geopandas as gpd
 import geoviews as gv
@@ -28,8 +28,25 @@ def resolve_bbox(
 
 def crop(
     ds: xr.Dataset,
-    bbox: shapely.Polygon | tuple[float, float, float, float],
+    bbox: shapely.Polygon,
 ) -> xr.Dataset:
+    """
+    Crop the dataset using the provided `bbox`.
+
+    Examples:
+        ``` python
+        import thalassa
+        import shapely
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        bbox = shapely.box(0, 0, 1, 1)
+        ds = thalassa.crop(ds, bbox)
+        ```
+
+    Parameters:
+        ds: The dataset we want to crop.
+        bbox: A Shapely polygon whose boundary will be used to crop `ds`.
+    """
     bbox = resolve_bbox(bbox)
     indices_of_nodes_in_bbox = np.where(
         True
@@ -69,7 +86,7 @@ def generate_thalassa_ds(
     if time_range is not None:
         coords["time"] = (("time"), time_range)
     # Data Variables
-    data_vars: dict[str, typing.Any] = {
+    data_vars: dict[str, T.Any] = {
         "triface_nodes": (("triface", "three"), triface_nodes),
         **kwargs,
     }
@@ -100,7 +117,7 @@ def is_variable_visualizable(ds: xr.Dataset, variable: str) -> bool:
     return ds[variable].dims in _VISUALIZABLE_DIMS
 
 
-def filter_visualizable_data_vars(ds: xr.Dataset, variables: typing.Iterable[str]) -> list[str]:
+def filter_visualizable_data_vars(ds: xr.Dataset, variables: T.Iterable[str]) -> list[str]:
     visualizable = []
     for var in variables:
         if is_variable_visualizable(ds=ds, variable=var):
@@ -132,7 +149,7 @@ def split_quads(face_nodes: npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
 
     # Append new triangles to the existing ones
     # Also cast to the proper type for Mypy
-    new_face_nodes = typing.cast(
+    new_face_nodes = T.cast(
         npt.NDArray[np.int_],
         np.r_[existing_triangles, new_triangles].astype(int),
     )
@@ -144,7 +161,7 @@ def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
     # https://www.unidata.ucar.edu/blogs/developer/en/entry/accessing_netcdf_data_by_coordinates
     # https://github.com/Unidata/python-workshop/blob/fall-2016/notebooks/netcdf-by-coordinates.ipynb
     dist = abs(ds.lon - lon) ** 2 + abs(ds.lat - lat) ** 2
-    index_of_nearest_node = typing.cast(int, dist.argmin())
+    index_of_nearest_node = T.cast(int, dist.argmin())
     return index_of_nearest_node
 
 
@@ -244,7 +261,7 @@ def is_point_in_the_raster(raster: gv.DynamicMap, lon: float, lat: float) -> boo
     raster_dataset = raster.values()[0].data
     data_var_name = raster.ddims[-1].name
     interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).data
-    return typing.cast(bool, ~np.isnan(interpolated))
+    return T.cast(bool, ~np.isnan(interpolated))
 
 
 def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:

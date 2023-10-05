@@ -178,7 +178,24 @@ NORMALIZE_DISPATCHER = {
 }
 
 
-def normalize_dataset(ds: xr.Dataset) -> xr.Dataset:
+def normalize(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Normalize the `dataset` i.e. convert it to the "Thalassa Schema".
+
+    Examples:
+        ``` python
+        import thalassa
+        import xarray as xr
+
+        ds = xr.open_dataset("some_netcdf.nc")
+        ds = thalassa.normalize(ds)
+        print(ds)
+        ```
+
+    Parameters:
+        ds: The dataset we want to convert.
+
+    """
     logger.debug("Dataset normalization: Started")
     fmt = infer_format(ds)
     normalizer_func = NORMALIZE_DISPATCHER[fmt]

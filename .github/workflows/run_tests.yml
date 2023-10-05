@@ -38,6 +38,14 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'requirements/*') }}
+      - uses: actions/cache@main
+        id: cache-netcdfs
+        with:
+          path: |
+            notebooks/schout_adcirc_20230828.nc
+            notebooks/schout_adcirc_20230829.nc
+            notebooks/schout_adcirc_20230830.nc
+          key: test-stofs-3d-atl-netcdf-files
       - run: python --version
       - run: python -m pip install --upgrade pip
       - run: python -m pip --version
