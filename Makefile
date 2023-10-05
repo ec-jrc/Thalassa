@@ -27,7 +27,11 @@ clean_notebooks:
 	pre-commit run nbstripout
 
 exec_notebooks:
-	python -m nbconvert --to notebook --execute --stdout notebooks/* >/dev/null
+	set -e; \
+	for file in $$(git -C notebooks ls-files); do \
+		echo $$file; \
+		timeout 600 papermill --start-timeout 1 --cwd notebooks notebooks/$$file --progress-bar /dev/null; \
+	done
 
 deps:
 	pre-commit run poetry-lock -a
