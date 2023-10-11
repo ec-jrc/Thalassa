@@ -140,10 +140,16 @@ def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> g
 
 def get_wireframe(
     ds_or_trimesh: gv.TriMesh | xr.Dataset,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
 ) -> gv.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
     trimesh = create_trimesh(ds_or_trimesh)
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
+    if x_range:
+        kwargs["x_range"] = x_range
+    if y_range:
+        kwargs["y_range"] = y_range
     wireframe = rasterize(**kwargs).opts(tools=["hover"], cmap=["black"], title="Mesh")
     wireframe = dynspread(wireframe)
     return wireframe
