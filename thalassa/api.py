@@ -195,13 +195,10 @@ def _get_stream_timeseries(
     variable: str,
     source_raster: gv.DynamicMap,
     stream_class: Stream,
-    layer: int | None = None,
 ) -> gv.DynamicMap:
     if stream_class not in {Tap, PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
 
-    if layer is not None:
-        ds = ds.isel(layer=layer)
     ds = ds[["lon", "lat", variable]]
 
     def callback(x: float, y: float) -> hv.Curve:
@@ -344,14 +341,12 @@ def get_tap_timeseries(
     ds: xr.Dataset,
     variable: str,
     source_raster: gv.DynamicMap,
-    layer: int | None = None,
 ) -> gv.DynamicMap:
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
         stream_class=Tap,
-        layer=layer,
     )
     return dmap
 
@@ -360,14 +355,12 @@ def get_pointer_timeseries(
     ds: xr.Dataset,
     variable: str,
     source_raster: gv.DynamicMap,
-    layer: int | None = None,
 ) -> gv.DynamicMap:
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
         stream_class=PointerXY,
-        layer=layer,
     )
     return dmap
 
