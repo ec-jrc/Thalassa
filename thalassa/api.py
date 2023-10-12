@@ -195,26 +195,27 @@ def _get_stream_timeseries(
     variable: str,
     source_raster: gv.DynamicMap,
     stream_class: Stream,
+    title_template: str = "",
 ) -> gv.DynamicMap:
     if stream_class not in {Tap, PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
 
     ds = ds[["lon", "lat", variable]]
 
-    def callback(x: float, y: float) -> hv.Curve:
+    def callback(x: float, y: float, title_template: str = title_template) -> hv.Curve:
         if not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y):
             # if the point is not inside the mesh, then omit the timeseries
-            title = f"Lon={x:.3f} Lat={y:.3f}"
+            if not title_template:
+                title_template = "{variable} - Lon={x:.3f} Lat={y:.3f}"
             plot = hv.Curve([])
         else:
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
             ts = ds.isel(node=node_index)
-            title = f"Lon={ts.lon.data:.3f} Lat={ts.lat.data:.3f}"
+            if not title_template:
+                title_template = (
+                    "{variable} - Node={node_index} Lon={ts.lon.data:.6f} Lat={ts.lat.data:.6f}"
+                )
             plot = hv.Curve(ts[variable])
-            plot = plot.redim(
-                variable,
-                range=(ts[variable].min(), ts[variable].max()),
-            )
         # setup hover
         hover = HoverTool(
             tooltips=[
@@ -226,6 +227,7 @@ def _get_stream_timeseries(
             },
         )
         # apply opts
+        title = title_template.format(**locals())
         plot = plot.opts(
             title=title,
             framewise=True,
@@ -234,6 +236,7 @@ def _get_stream_timeseries(
             tools=[hover],
             xformatter=get_dtf(),
         )
+
         return plot
 
     stream = stream_class(x=0, y=0, source=source_raster)
@@ -341,12 +344,14 @@ def get_tap_timeseries(
     ds: xr.Dataset,
     variable: str,
     source_raster: gv.DynamicMap,
+    title_template: str = "",
 ) -> gv.DynamicMap:
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
         stream_class=Tap,
+        title_template=title_template,
     )
     return dmap
 
@@ -355,12 +360,14 @@ def get_pointer_timeseries(
     ds: xr.Dataset,
     variable: str,
     source_raster: gv.DynamicMap,
+    title_template: str = "",
 ) -> gv.DynamicMap:
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
         stream_class=PointerXY,
+        title_template=title_template,
     )
     return dmap
 
