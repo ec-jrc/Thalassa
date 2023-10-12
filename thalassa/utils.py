@@ -161,7 +161,7 @@ def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
     # https://www.unidata.ucar.edu/blogs/developer/en/entry/accessing_netcdf_data_by_coordinates
     # https://github.com/Unidata/python-workshop/blob/fall-2016/notebooks/netcdf-by-coordinates.ipynb
     dist = abs(ds.lon - lon) ** 2 + abs(ds.lat - lat) ** 2
-    index_of_nearest_node = T.cast(int, dist.argmin())
+    index_of_nearest_node = int(dist.argmin())
     return index_of_nearest_node
 
 
