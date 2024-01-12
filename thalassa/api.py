@@ -237,9 +237,11 @@ def _get_stream_timeseries(
 
     ds = ds[["lon", "lat", variable]]
     hover = get_hover(variable)
+    initial_render = True
 
     def callback(x: float, y: float) -> holoviews.Curve:
-        if not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y):
+        nonlocal initial_render
+        if initial_render or (not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y)):
             # if the point is not inside the mesh, then omit the timeseries
             node_index = float("NaN")
             lon = x
@@ -255,6 +257,7 @@ def _get_stream_timeseries(
             title = title_template.format(lon=lon, lat=lat, variable=variable, node_index=node_index)
             plot = hv.Curve(ts[variable])
         logger.debug("Title: %s", title)
+        initial_render = False
         plot = plot.opts(
             title=title,
             framewise=True,
