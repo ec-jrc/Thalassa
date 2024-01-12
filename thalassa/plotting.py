@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
-import geoviews as gv
-import holoviews as hv
-import shapely
-import xarray as xr
+if TYPE_CHECKING:
+    import geoviews
+    import shapely
+    import xarray
 
 from . import api
 from . import normalization
@@ -14,7 +15,7 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 
-def _sanity_check(ds: xr.Dataset, variable: str) -> None:
+def _sanity_check(ds: xarray.Dataset, variable: str) -> None:
     dims = ds[variable].dims
     if "node" not in dims:
         msg = (
@@ -32,10 +33,10 @@ def _sanity_check(ds: xr.Dataset, variable: str) -> None:
 
 
 def plot_mesh(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     bbox: shapely.Polygon | None = None,
     title: str = "Mesh",
-) -> gv.DynamicMap:
+) -> geoviews.DynamicMap:
     """
     Plot the mesh of the dataset
 
@@ -64,6 +65,8 @@ def plot_mesh(
         title: The title of the plot.
 
     """
+    import holoviews as hv
+
     ds = normalization.normalize(ds)
     if bbox:
         ds = utils.crop(ds, bbox)
@@ -74,7 +77,7 @@ def plot_mesh(
 
 
 def plot(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     variable: str,
     bbox: shapely.Polygon | None = None,
     title: str = "",
@@ -86,7 +89,7 @@ def plot(
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     show_mesh: bool = False,
-) -> gv.DynamicMap:
+) -> geoviews.DynamicMap:
     """
     Return the plot of the specified `variable`.
 
@@ -145,6 +148,8 @@ def plot(
             Enabling this makes rendering slower.
 
     """
+    import holoviews as hv
+
     ds = normalization.normalize(ds)
     _sanity_check(ds=ds, variable=variable)
     if bbox:
@@ -175,10 +180,10 @@ def plot(
 
 
 def plot_ts(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     variable: str,
-    source_plot: gv.DynamicMap,
-) -> gv.DynamicMap:
+    source_plot: geoviews.DynamicMap,
+) -> geoviews.DynamicMap:
     """
     Return a plot with the full timeseries of a specific node.
 

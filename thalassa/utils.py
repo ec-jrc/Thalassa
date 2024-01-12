@@ -1,35 +1,41 @@
 from __future__ import annotations
 
-import logging.config
+import logging
 import typing as T
 
-import geopandas as gpd
-import geoviews as gv
-import holoviews as hv
-import numpy as np
-import numpy.typing as npt
-import numpy_indexed as npi
-import pandas as pd
-import shapely
-import xarray as xr
+
+if T.TYPE_CHECKING:
+    import geopandas
+    import geoviews
+    import holoviews
+    import numpy
+    import numpy.typing as npt
+    import pandas
+    import shapely
+    import xarray
+
 
 logger = logging.getLogger(__name__)
 
-GLOBAL_BBOX = shapely.box(-180, -90, 180, 90)
-
 
 def resolve_bbox(
-    bbox: shapely.Polygon | tuple[float, float, float, float] = GLOBAL_BBOX,
+    bbox: shapely.Polygon | tuple[float, float, float, float] | None = None,
 ) -> shapely.Polygon:
-    if isinstance(bbox, tuple):
+    import shapely
+
+    if bbox is None:
+        bbox = shapely.box(-180, -90, 180, 90)
+    elif isinstance(bbox, tuple):
         bbox = shapely.box(*bbox)
+    else:
+        pass
     return bbox
 
 
 def crop(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     bbox: shapely.Polygon,
-) -> xr.Dataset:
+) -> xarray.Dataset:
     """
     Crop the dataset using the provided `bbox`.
 
@@ -47,6 +53,9 @@ def crop(
         ds: The dataset we want to crop.
         bbox: A Shapely polygon whose boundary will be used to crop `ds`.
     """
+    import numpy as np
+    import numpy_indexed as npi
+
     bbox = resolve_bbox(bbox)
     indices_of_nodes_in_bbox = np.where(
         True
@@ -70,14 +79,16 @@ def crop(
 
 
 def generate_thalassa_ds(
-    nodes: npt.NDArray[np.int_],
-    triface_nodes: npt.NDArray[np.int_],
-    lons: npt.NDArray[np.float_] | None = None,
-    lats: npt.NDArray[np.float_] | None = None,
-    time_range: pd.DateTimeIndex | None = None,
-    **kwargs: dict[str, tuple[tuple[str], npt.NDArray[np.float_]]],
-) -> xr.Dataset:
+    nodes: npt.NDArray[numpy.int_],
+    triface_nodes: npt.NDArray[numpy.int_],
+    lons: npt.NDArray[numpy.float_] | None = None,
+    lats: npt.NDArray[numpy.float_] | None = None,
+    time_range: pandas.DatetimeIndex | None = None,
+    **kwargs: dict[str, tuple[tuple[str], npt.NDArray[numpy.float_]]],
+) -> xarray.Dataset:
     """Return a "thalassa" dataset"""
+    import xarray as xr
+
     # Coordinates
     coords = dict(
         node=nodes,
@@ -108,7 +119,7 @@ _VISUALIZABLE_DIMS = {
 }
 
 
-def is_variable_visualizable(ds: xr.Dataset, variable: str) -> bool:
+def is_variable_visualizable(ds: xarray.Dataset, variable: str) -> bool:
     """
     Return `True` if thalassa can visualize the variable, `False` otherwise.
     """
@@ -117,7 +128,7 @@ def is_variable_visualizable(ds: xr.Dataset, variable: str) -> bool:
     return ds[variable].dims in _VISUALIZABLE_DIMS
 
 
-def filter_visualizable_data_vars(ds: xr.Dataset, variables: T.Iterable[str]) -> list[str]:
+def filter_visualizable_data_vars(ds: xarray.Dataset, variables: T.Iterable[str]) -> list[str]:
     visualizable = []
     for var in variables:
         if is_variable_visualizable(ds=ds, variable=var):
@@ -125,10 +136,12 @@ def filter_visualizable_data_vars(ds: xr.Dataset, variables: T.Iterable[str]) ->
     return visualizable
 
 
-def split_quads(face_nodes: npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
+def split_quads(face_nodes: npt.NDArray[numpy.int_]) -> npt.NDArray[numpy.int_]:
     """
     https://gist.github.com/pmav99/5ded91f18ef096b080b2ed45598c7d1c
     """
+    import numpy as np
+
     if face_nodes.shape[-1] != 4:
         return face_nodes
 
@@ -157,7 +170,7 @@ def split_quads(face_nodes: npt.NDArray[np.int_]) -> npt.NDArray[np.int_]:
     # return new_face_nodes.astype(int)
 
 
-def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
+def get_index_of_nearest_node(ds: xarray.Dataset, lon: float, lat: float) -> int:
     # https://www.unidata.ucar.edu/blogs/developer/en/entry/accessing_netcdf_data_by_coordinates
     # https://github.com/Unidata/python-workshop/blob/fall-2016/notebooks/netcdf-by-coordinates.ipynb
     dist = abs(ds.lon - lon) ** 2 + abs(ds.lat - lat) ** 2
@@ -165,15 +178,15 @@ def get_index_of_nearest_node(ds: xr.Dataset, lon: float, lat: float) -> int:
     return index_of_nearest_node
 
 
-def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) -> xr.DataArray:
+def extract_timeseries(ds: xarray.Dataset, variable: str, lon: float, lat: float) -> xarray.DataArray:
     index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
     return ds[variable].isel(node=index)
 
 
 def drop_elements_crossing_idl(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     max_lon: float = 10,
-) -> xr.Dataset:
+) -> xarray.Dataset:
     """
     Drop triface elements crossing the International Date Line (IDL).
 
@@ -192,6 +205,8 @@ def drop_elements_crossing_idl(
     if a small value for `max_lon` is used. Nevertheless, the main purpose of this function is
     to visualize data, so some false positives are not the end of the wold.
     """
+    import numpy as np
+
     if max_lon <= 0:
         raise ValueError(f'Maximum longitudinal "distance" must be positive: {max_lon}')
     a, b, c = ds.triface_nodes.data.T
@@ -203,7 +218,7 @@ def drop_elements_crossing_idl(
     # For more info check the help of `np.where()`
     condition = (
         # fmt: off
-          ((lon_a * lon_b < 0) & (np.abs(lon_a - lon_b) >= max_lon))
+        ((lon_a * lon_b < 0) & (np.abs(lon_a - lon_b) >= max_lon))
         | ((lon_a * lon_c < 0) & (np.abs(lon_a - lon_c) >= max_lon))
         | ((lon_b * lon_c < 0) & (np.abs(lon_b - lon_c) >= max_lon))
         # fmt: on
@@ -213,7 +228,7 @@ def drop_elements_crossing_idl(
     return ds
 
 
-def get_bbox_from_raster(raster: gv.DynamicMap) -> hv.core.boundingregion.BoundingBox:
+def get_bbox_from_raster(raster: geoviews.DynamicMap) -> holoviews.core.boundingregion.BoundingBox:
     # XXX Even though they seem the same,
     #       raster[()]
     # and
@@ -225,19 +240,19 @@ def get_bbox_from_raster(raster: gv.DynamicMap) -> hv.core.boundingregion.Boundi
     return bbox
 
 
-def get_x_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+def get_x_range_from_bbox(bbox: holoviews.core.boundingregion.BoundingBox) -> tuple[float, float]:
     aarect = bbox.aarect()
     x_range = (aarect.left(), aarect.right())
     return x_range
 
 
-def get_y_range_from_bbox(bbox: hv.core.boundingregion.BoundingBox) -> tuple[float, float]:
+def get_y_range_from_bbox(bbox: holoviews.core.boundingregion.BoundingBox) -> tuple[float, float]:
     aarect = bbox.aarect()
     y_range = (aarect.bottom(), aarect.top())
     return y_range
 
 
-def is_point_in_the_raster(raster: gv.DynamicMap, lon: float, lat: float) -> bool:
+def is_point_in_the_raster(raster: geoviews.DynamicMap, lon: float, lat: float) -> bool:
     """
     Return ``True`` if the point is inside the mesh of the ``raster``, ``False`` otherwise.
 
@@ -258,14 +273,20 @@ def is_point_in_the_raster(raster: gv.DynamicMap, lon: float, lat: float) -> boo
         assert not is_point_in_the_raster(stofs_raster, 22, 40)
 
     """
+    import numpy as np
+
     raster_dataset = raster.values()[0].data
     data_var_name = raster.ddims[-1].name
     interpolated = raster_dataset[data_var_name].interp(dict(lon=lon, lat=lat)).data
     return T.cast(bool, ~np.isnan(interpolated))
 
 
-def generate_mesh_polygon(ds: xr.Dataset) -> gpd.GeoDataFrame:
-    """Return a ``gpd.GeoDataFrame`` containing the union of all the polygons"""
+def generate_mesh_polygon(ds: xarray.Dataset) -> geopandas.GeoDataFrame:
+    """Return a ``geopandas.GeoDataFrame`` containing the union of all the polygons"""
+    import geopandas as gpd
+    import numpy as np
+    import shapely
+
     logger.debug("Starting polygon generation")
     # Get the indexes of the nodes
     triface_nodes = ds.triface_nodes.data

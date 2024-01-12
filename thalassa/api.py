@@ -1,25 +1,22 @@
 from __future__ import annotations
 
+import functools
 import logging
 import operator
 import os
-import typing
+import typing as T
 import warnings
-from functools import reduce
 
-import geoviews as gv
-import holoviews as hv
-import pandas as pd
-import xarray as xr
-from bokeh.models import HoverTool
-from bokeh.models.formatters import DatetimeTickFormatter
-from holoviews import opts as hvopts
-from holoviews.operation.datashader import dynspread
-from holoviews.operation.datashader import rasterize
-from holoviews.streams import PointerXY
-from holoviews.streams import Selection1D
-from holoviews.streams import Stream
-from holoviews.streams import Tap
+# from holoviews import opts as hvopts
+
+if T.TYPE_CHECKING:
+    import bokeh.models
+    import geoviews
+    import holoviews
+    import xarray
+    from holoviews.streams import Stream
+    from bokeh.models.formatters import DatetimeTickFormatter
+
 
 from . import normalization
 from . import utils
@@ -45,8 +42,8 @@ ADCIRC_VARIABLES_TO_BE_DROPPED = ["neta", "nvel", "max_nvdll", "max_nvell"]
 def open_dataset(
     path: str | os.PathLike[str],
     normalize: bool = True,
-    **kwargs: dict[str, typing.Any],
-) -> xr.Dataset:
+    **kwargs: dict[str, T.Any],
+) -> xarray.Dataset:
     """
     Open the file specified at ``path`` using ``xarray`` and return an ``xarray.Dataset``.
 
@@ -75,7 +72,9 @@ def open_dataset(
         kwargs: The ``kwargs`` are being passed through to ``xarray.open_dataset``.
 
     """
-    default_kwargs: dict[str, typing.Any] = dict(
+    import xarray as xr
+
+    default_kwargs: dict[str, T.Any] = dict(
         mask_and_scale=True,
         cache=False,
         drop_variables=ADCIRC_VARIABLES_TO_BE_DROPPED,
@@ -88,6 +87,8 @@ def open_dataset(
 
 
 def get_dtf() -> DatetimeTickFormatter:
+    from bokeh.models.formatters import DatetimeTickFormatter
+
     dtf = DatetimeTickFormatter(
         hours="%m/%d %H:%M",
         days="%m/%d %H",
@@ -98,17 +99,19 @@ def get_dtf() -> DatetimeTickFormatter:
 
 
 def create_trimesh(
-    ds_or_trimesh: gv.TriMesh | xr.Dataset,
+    ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     variable: str | None = None,
-) -> gv.TriMesh:
+) -> geoviews.TriMesh:
     """
-    Create a ``gv.TriMesh`` object from the provided dataset.
+    Create a ``geoviews.TriMesh`` object from the provided dataset.
 
     Parameters:
         ds_or_trimesh: The dataset containing the variable we want to visualize.
             If a trimesh object is passed, then return it immediately.
         variable: The data variable we want to visualize
     """
+    import geoviews as gv
+
     if isinstance(ds_or_trimesh, gv.TriMesh):
         # This is already a trimesh, nothing to do
         return ds_or_trimesh
@@ -126,7 +129,7 @@ def create_trimesh(
     return trimesh
 
 
-def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> gv.Tiles:
+def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> geoviews.Tiles:
     """
     Return a WMTS using the provided `url`.
 
@@ -134,29 +137,37 @@ def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> g
         url: The URL of the Tiling Service. It defaults to Openstreetmap.
 
     """
+    import geoviews as gv
+
     tiles = gv.WMTS(url)
     return tiles
 
 
 def get_wireframe(
-    ds_or_trimesh: gv.TriMesh | xr.Dataset,
+    ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
-) -> gv.DynamicMap:
+) -> geoviews.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
+    import holoviews.operation.datashader as hv_operation_datashader
+
     trimesh = create_trimesh(ds_or_trimesh)
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
     if x_range:
         kwargs["x_range"] = x_range
     if y_range:
         kwargs["y_range"] = y_range
-    wireframe = rasterize(**kwargs).opts(tools=["hover"], cmap=["black"], title="Mesh")
-    wireframe = dynspread(wireframe)
+    wireframe = hv_operation_datashader.rasterize(**kwargs).opts(
+        tools=["hover"],
+        cmap=["black"],
+        title="Mesh",
+    )
+    wireframe = hv_operation_datashader.dynspread(wireframe)
     return wireframe
 
 
 def get_raster(
-    ds_or_trimesh: gv.TriMesh | xr.Dataset,
+    ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     variable: str | None = None,
     title: str = "",
     cmap: str = "plasma",
@@ -166,12 +177,14 @@ def get_raster(
     clim_max: float | None = None,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
-) -> gv.DynamicMap:
+) -> geoviews.DynamicMap:
     """
     Return a ``DynamicMap`` with a rasterized image of the variable.
 
     Uses ``datashader`` behind the scenes.
     """
+    import holoviews.operation.datashader as hv_operation_datashader
+
     trimesh = create_trimesh(ds_or_trimesh=ds_or_trimesh, variable=variable)
     kwargs = dict(element=trimesh, precompute=True)
     if x_range:
@@ -179,7 +192,7 @@ def get_raster(
     if y_range:
         kwargs["y_range"] = y_range
     logger.debug("rasterize kwargs: %s", kwargs)
-    raster = rasterize(**kwargs).opts(
+    raster = hv_operation_datashader.rasterize(**kwargs).opts(
         cmap=cmap,
         clabel=clabel,
         colorbar=colorbar,
@@ -190,44 +203,57 @@ def get_raster(
     return raster
 
 
+def get_hover(variable: str) -> bokeh.models.HoverTool:
+    import bokeh.models
+
+    hover = bokeh.models.HoverTool(
+        tooltips=[
+            ("time", "@time{%F %T}"),
+            (f"{variable}", f"@{variable}"),
+        ],
+        formatters={
+            "@time": "datetime",
+        },
+    )
+    return hover
+
+
 def _get_stream_timeseries(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     variable: str,
-    source_raster: gv.DynamicMap,
+    source_raster: geoviews.DynamicMap,
     stream_class: Stream,
-    title_template: str = "",
-) -> gv.DynamicMap:
-    if stream_class not in {Tap, PointerXY}:
+    title_template: str,
+) -> geoviews.DynamicMap:
+    import geoviews as gv
+    import holoviews as hv
+    import holoviews.streams as hv_streams
+
+    logger.debug("Timeseries start")
+
+    if stream_class not in {hv_streams.Tap, hv_streams.PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
 
     ds = ds[["lon", "lat", variable]]
+    hover = get_hover(variable)
 
-    def callback(x: float, y: float, title_template: str = title_template) -> hv.Curve:
+    def callback(x: float, y: float) -> holoviews.Curve:
         if not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y):
             # if the point is not inside the mesh, then omit the timeseries
-            if not title_template:
-                title_template = "{variable} - Lon={x:.3f} Lat={y:.3f}"
+            node_index = float("NaN")
+            lon = x
+            lat = y
+            title = "Please click on the map!"
             plot = hv.Curve([])
         else:
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
+            logger.debug("Node index: %s", node_index)
             ts = ds.isel(node=node_index)
-            if not title_template:
-                title_template = (
-                    "{variable} - Node={node_index} Lon={ts.lon.data:.6f} Lat={ts.lat.data:.6f}"
-                )
+            lon = float(ts.lon.data)
+            lat = float(ts.lat.data)
+            title = title_template.format(lon=lon, lat=lat, variable=variable, node_index=node_index)
             plot = hv.Curve(ts[variable])
-        # setup hover
-        hover = HoverTool(
-            tooltips=[
-                ("time", "@time{%F %T}"),
-                (f"{variable}", f"@{variable}"),
-            ],
-            formatters={
-                "@time": "datetime",
-            },
-        )
-        # apply opts
-        title = title_template.format(**locals())
+        logger.debug("Title: %s", title)
         plot = plot.opts(
             title=title,
             framewise=True,
@@ -236,7 +262,6 @@ def _get_stream_timeseries(
             tools=[hover],
             xformatter=get_dtf(),
         )
-
         return plot
 
     stream = stream_class(x=0, y=0, source=source_raster)
@@ -245,10 +270,13 @@ def _get_stream_timeseries(
 
 
 def get_station_timeseries(
-    stations: xr.Dataset,
-    pins: gv.DynamicMap,
-) -> hv.DynamicMap:
-    def callback(index: list[int]) -> hv.Curve:
+    stations: xarray.Dataset,
+    pins: geoviews.DynamicMap,
+) -> holoviews.DynamicMap:
+    import holoviews as hv
+    import pandas as pd
+
+    def callback(index: list[int]) -> holoviews.Curve:
         # sometimes there are multiple pins with the same lon/lat
         # When one of these pins gets selected index contains the indices of both pins
         # This causes an exception to be raised.
@@ -264,13 +292,13 @@ def get_station_timeseries(
         else:
             df = pins.data
             title = df.iloc[index[0]].location
-            ds = stations.isel(node=df.index[index])[columns]
+            ds = stations.isel(node=df.index[index])[columns]  # type: ignore[assignment]
         dataset = hv.Dataset(ds)
         curve1 = hv.Curve(dataset, kdims=["stime"], vdims=["elev_sim"], label="Simulation")
         curve2 = hv.Curve(dataset, kdims=["time"], vdims=["elev_obs"], label="Observation")
         components = [curve1, curve2]
-        overlay = reduce(operator.mul, components).opts(
-            hvopts.Curve(
+        overlay = functools.reduce(operator.mul, components).opts(
+            hv.opts.Curve(
                 padding=0.05,
                 title=title,
                 framewise=True,
@@ -282,7 +310,7 @@ def get_station_timeseries(
         )
         return overlay
 
-    stream = Selection1D(source=pins, index=[])
+    stream = hv.streams.Selection1D(source=pins, index=[])
     dmap = hv.DynamicMap(callback, streams=[stream])
     return dmap
 
@@ -306,10 +334,13 @@ _STATION_VARIABLES = [
 
 
 def get_station_table(
-    stations: xr.Dataset,
-    pins: gv.DynamicMap,
-) -> hv.DynamicMap:
-    def callback(index: list[int]) -> hv.Table:
+    stations: xarray.Dataset,
+    pins: geoviews.DynamicMap,
+) -> holoviews.DynamicMap:
+    import holoviews as hv
+    import pandas as pd
+
+    def callback(index: list[int]) -> holoviews.Table:
         # sometimes there are multiple pins with the same lon/lat
         # When one of these pins gets selected index contains the indices of both pins
         # This causes an exception to be raised.
@@ -324,16 +355,18 @@ def get_station_table(
             ds = stations.isel(node=pins.data.index[index])
             df = ds[_STATION_VARIABLES].to_dataframe().T
             df.index.name = "attribute"
-            df.columns = ["value"]
+            df.columns = pd.Index(["value"])
         table = hv.Table(df, kdims=["attribute"])
         return table
 
-    stream = Selection1D(source=pins, index=[])
+    stream = hv.streams.Selection1D(source=pins, index=[])
     dmap = hv.DynamicMap(callback, streams=[stream])
     return dmap
 
 
-def get_station_pins(stations: xr.Dataset) -> gv.Points:
+def get_station_pins(stations: xarray.Dataset) -> geoviews.Points:
+    import geoviews as gv
+
     df = stations[["lon", "lat", "location"]].to_dataframe()
     pins = gv.Points(df, kdims=["lon", "lat"], vdims=["location"])
     pins = pins.opts(color="red", marker="circle_dot", size=10, tools=["tap", "hover"])
@@ -341,44 +374,47 @@ def get_station_pins(stations: xr.Dataset) -> gv.Points:
 
 
 def get_tap_timeseries(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     variable: str,
-    source_raster: gv.DynamicMap,
-    title_template: str = "",
-) -> gv.DynamicMap:
+    source_raster: geoviews.DynamicMap,
+    title_template: str = "{variable} - Node={node_index} Lon={lon:.6f} Lat={lat:.6f}",
+) -> geoviews.DynamicMap:
+    import holoviews.streams as hv_streams
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
-        stream_class=Tap,
+        stream_class=hv_streams.Tap,
         title_template=title_template,
     )
     return dmap
 
 
 def get_pointer_timeseries(
-    ds: xr.Dataset,
+    ds: xarray.Dataset,
     variable: str,
-    source_raster: gv.DynamicMap,
+    source_raster: geoviews.DynamicMap,
     title_template: str = "",
-) -> gv.DynamicMap:
+) -> geoviews.DynamicMap:
+    import holoviews.streams as hv_streams
+
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
-        stream_class=PointerXY,
+        stream_class=hv_streams.PointerXY,
         title_template=title_template,
     )
     return dmap
 
 
-def extract_timeseries(ds: xr.Dataset, variable: str, lon: float, lat: float) -> xr.DataArray:
+def extract_timeseries(ds: xarray.Dataset, variable: str, lon: float, lat: float) -> xarray.DataArray:
     index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
     # extracted = ds[[variable, "lon", "lat"]].isel(node=index)
     return ds[variable].isel(node=index)
 
 
-# def plot_timeseries(ds: xr.DataArray, lon: float, lat: float) -> gv.DynamicMap:
+# def plot_timeseries(ds: xarray.DataArray, lon: float, lat: float) -> geoviews.DynamicMap:
 #     node_index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
 #     node_lon = ds.lon.isel(node_index)
 #     node_lat = ds.lat.isel(node_index)

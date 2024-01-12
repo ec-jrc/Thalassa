@@ -3,8 +3,10 @@ from __future__ import annotations
 import enum
 import logging
 import pathlib
+import typing
 
-import xarray as xr
+if typing.TYPE_CHECKING:
+    import xarray
 
 from . import api
 from . import utils
@@ -64,25 +66,25 @@ _ADCIRC_VARS = {
 # fmt: on
 
 
-def is_generic(ds: xr.Dataset) -> bool:
+def is_generic(ds: xarray.Dataset) -> bool:
     total_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
     return _GENERIC_DIMS.issubset(ds.dims) and _GENERIC_VARS.issubset(total_vars)
 
 
-def is_schism(ds: xr.Dataset) -> bool:
+def is_schism(ds: xarray.Dataset) -> bool:
     total_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
     return _SCHISM_DIMS.issubset(ds.dims) and _SCHISM_VARS.issubset(total_vars)
 
 
-def is_pyposeidon(ds: xr.Dataset) -> bool:
+def is_pyposeidon(ds: xarray.Dataset) -> bool:
     return _PYPOSEIDON_DIMS.issubset(ds.dims) and _PYPOSEIDON_VARS.issubset(ds.data_vars)
 
 
-def is_adcirc(ds: xr.Dataset) -> bool:
+def is_adcirc(ds: xarray.Dataset) -> bool:
     return _ADCIRC_DIMS.issubset(ds.dims) and _ADCIRC_VARS.issubset(ds.data_vars)
 
 
-def infer_format(ds: xr.Dataset) -> THALASSA_FORMATS:
+def infer_format(ds: xarray.Dataset) -> THALASSA_FORMATS:
     if is_schism(ds):
         fmt = THALASSA_FORMATS.SCHISM
     elif is_adcirc(ds):
@@ -111,11 +113,11 @@ def can_be_inferred(path: str | pathlib.Path) -> bool:
     return result
 
 
-def normalize_generic(ds: xr.Dataset) -> xr.Dataset:
+def normalize_generic(ds: xarray.Dataset) -> xarray.Dataset:
     return ds
 
 
-def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
+def normalize_schism(ds: xarray.Dataset) -> xarray.Dataset:
     ds = ds.rename(
         {
             "nSCHISM_hgrid_edge": "edge",
@@ -140,7 +142,7 @@ def normalize_schism(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def normalize_pyposeidon(ds: xr.Dataset) -> xr.Dataset:
+def normalize_pyposeidon(ds: xarray.Dataset) -> xarray.Dataset:
     ds = ds.rename(
         {
             "nSCHISM_hgrid_face": "face",
@@ -154,7 +156,7 @@ def normalize_pyposeidon(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def normalize_adcirc(ds: xr.Dataset) -> xr.Dataset:
+def normalize_adcirc(ds: xarray.Dataset) -> xarray.Dataset:
     ds = ds.rename(
         {
             "x": "lon",
@@ -178,7 +180,7 @@ NORMALIZE_DISPATCHER = {
 }
 
 
-def normalize(ds: xr.Dataset) -> xr.Dataset:
+def normalize(ds: xarray.Dataset) -> xarray.Dataset:
     """
     Normalize the `dataset` i.e. convert it to the "Thalassa Schema".
 

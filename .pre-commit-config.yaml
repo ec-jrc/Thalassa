@@ -45,10 +45,11 @@ repos:
     rev: "23.12.1"
     hooks:
       - id: "black"
+        args: ["--diff"]
 
   - repo: "https://github.com/charliermarsh/ruff-pre-commit"
     # Ruff version.
-    rev: 'v0.1.12'
+    rev: "v0.1.12"
     hooks:
       - id: "ruff"
 
@@ -64,15 +65,34 @@ repos:
       - id: "poetry-lock"
         args: ["--check"]
       - id: "poetry-export"
-        name: 'poetry export main'
-        args: ["--without-hashes", "--only", "main", "-f", "requirements.txt", "-o", "requirements/requirements.txt"]
+        name: "poetry export main"
+        args:
+          [
+            "--without-hashes",
+            "--only",
+            "main",
+            "-f",
+            "requirements.txt",
+            "-o",
+            "requirements/requirements.txt",
+          ]
       - id: "poetry-export"
-        name: 'poetry export dev'
-        args: ["--without-hashes", "--with", "dev", "--with", "docs", "-f", "requirements.txt", "-o", "requirements/requirements-dev.txt"]
+        name: "poetry export dev"
+        args:
+          [
+            "--without-hashes",
+            "--with",
+            "dev",
+            "--with",
+            "docs",
+            "-f",
+            "requirements.txt",
+            "-o",
+            "requirements/requirements-dev.txt",
+          ]
 
   - repo: "local"
     hooks:
-
       - id: "mypy"
         name: "mypy"
         entry: "make mypy"
