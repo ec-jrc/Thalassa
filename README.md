@@ -3,7 +3,7 @@ Thalassa
 
 [![Documentation Status](https://readthedocs.org/projects/thalassa/badge/?version=latest)](https://thalassa.readthedocs.io/en/latest/?badge=latest) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ec-jrc/Thalassa) ![CI](https://github.com/ec-jrc/Thalassa/actions/workflows/run_tests.yml/badge.svg)[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ec-jrc/Thalassa/master?urlpath=lab)
 
-Thalassa ia a library for visualizing unstructured mesh data.
+Thalassa is a library for visualizing unstructured mesh data with a focus on large scale sea level data
 
 It builds upon [geoviews](https://geoviews.org/) and [datashader](https://datashader.org/)
 and can easily handle meshes with millions of nodes interactively.
