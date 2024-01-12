@@ -85,16 +85,33 @@ python_version = "3.9"
 plugins = [
     "numpy.typing.mypy_plugin"
 ]
-show_error_codes = true
 show_column_numbers = true
 show_error_context = true
 warn_no_return = true
 warn_redundant_casts = true
 warn_return_any = true
-warn_unreachable = true
-warn_unused_ignores = true
 strict = true
 ignore_missing_imports = true
+disable_error_code = [ ]
+enable_error_code = [
+  "comparison-overlap",
+  "explicit-override",
+  "ignore-without-code",
+  "no-any-return",
+  "no-any-unimported",
+  "no-untyped-call",
+  "no-untyped-def",
+  "possibly-undefined",
+  "redundant-cast",
+  "redundant-expr",
+  "redundant-self",
+  "truthy-bool",
+  "truthy-iterable",
+  "type-arg",
+  "unimported-reveal",
+  "unreachable",
+  "unused-ignore",
+]
 
 # mypy per-module options:
 [[tool.mypy.overrides]]
