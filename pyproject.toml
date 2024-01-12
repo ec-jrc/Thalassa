@@ -25,7 +25,7 @@ classifiers = [
 python = ">=3.9, <4.0"
 bokeh = ">=3.0"
 Cartopy = "*"
-dask = "*"
+dask = {version = "*", extras = ["array", "dataframe", "diagnostics", "distributed", "complete"]}
 datashader = "*"
 geopandas = "*"
 geoviews = ">=1.10"
@@ -42,11 +42,13 @@ xarray = {version = "*", extras = ["io", "accel"]}
 [tool.poetry.group.dev.dependencies]
 covdefaults = "*"
 mypy = ">=1"
+types-decorator = "*"
 pytest = "*"
 pytest-cov = ">=3.0"
 ipykernel = "*"
 ipython = "*"
 papermill = "*"
+pandas-stubs = "*"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"
