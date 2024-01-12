@@ -7,6 +7,9 @@ import os
 import typing as T
 import warnings
 
+from . import normalization
+from . import utils
+
 # from holoviews import opts as hvopts
 
 if T.TYPE_CHECKING:
@@ -16,10 +19,6 @@ if T.TYPE_CHECKING:
     import xarray
     from holoviews.streams import Stream
     from bokeh.models.formatters import DatetimeTickFormatter
-
-
-from . import normalization
-from . import utils
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,7 @@ def open_dataset(
         drop_variables=ADCIRC_VARIABLES_TO_BE_DROPPED,
     )
     with warnings.catch_warnings(record=True):
-        ds = xr.open_dataset(path, **(default_kwargs | kwargs))  # type: ignore[arg-type]
+        ds = xr.open_dataset(path, **(default_kwargs | kwargs))
     if normalize:
         ds = normalization.normalize(ds)
     return ds
@@ -218,6 +217,7 @@ def get_hover(variable: str) -> bokeh.models.HoverTool:
     return hover
 
 
+
 def _get_stream_timeseries(
     ds: xarray.Dataset,
     variable: str,
@@ -230,7 +230,6 @@ def _get_stream_timeseries(
     import holoviews as hv
     import holoviews.streams as hv_streams
 
-    logger.debug("Timeseries start")
 
     if stream_class not in {hv_streams.Tap, hv_streams.PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
@@ -240,6 +239,7 @@ def _get_stream_timeseries(
     initial_render = True
 
     def callback(x: float, y: float) -> holoviews.Curve:
+        logger.debug("tsplot: start")
         nonlocal initial_render
         if initial_render or (not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y)):
             # if the point is not inside the mesh, then omit the timeseries
@@ -250,13 +250,13 @@ def _get_stream_timeseries(
             plot = hv.Curve([])
         else:
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
-            logger.debug("Node index: %s", node_index)
+            logger.debug("tsplot: node index: %s", node_index)
             ts = ds.isel(node=node_index)
             lon = float(ts.lon.data)
             lat = float(ts.lat.data)
             title = title_template.format(lon=lon, lat=lat, variable=variable, node_index=node_index)
             plot = hv.Curve(ts[variable])
-        logger.debug("Title: %s", title)
+        logger.info("tsplot: title: %s", title)
         initial_render = False
         plot = plot.opts(
             title=title,
@@ -267,6 +267,7 @@ def _get_stream_timeseries(
             xformatter=get_dtf(),
             fontscale=fontscale,
         )
+        logger.debug("tsplot: end")
         return plot
 
     stream = stream_class(x=0, y=0, source=source_raster)
