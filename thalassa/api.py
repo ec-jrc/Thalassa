@@ -224,6 +224,7 @@ def _get_stream_timeseries(
     source_raster: geoviews.DynamicMap,
     stream_class: Stream,
     title_template: str,
+    fontscale: float = 1,
 ) -> geoviews.DynamicMap:
     import geoviews as gv
     import holoviews as hv
@@ -261,6 +262,7 @@ def _get_stream_timeseries(
             show_grid=True,
             tools=[hover],
             xformatter=get_dtf(),
+            fontscale=fontscale,
         )
         return plot
 
@@ -378,14 +380,17 @@ def get_tap_timeseries(
     variable: str,
     source_raster: geoviews.DynamicMap,
     title_template: str = "{variable} - Node={node_index} Lon={lon:.6f} Lat={lat:.6f}",
+    fontscale: float = 1,
 ) -> geoviews.DynamicMap:
     import holoviews.streams as hv_streams
+
     dmap = _get_stream_timeseries(
         ds=ds,
         variable=variable,
         source_raster=source_raster,
         stream_class=hv_streams.Tap,
         title_template=title_template,
+        fontscale=fontscale,
     )
     return dmap
 
@@ -395,6 +400,7 @@ def get_pointer_timeseries(
     variable: str,
     source_raster: geoviews.DynamicMap,
     title_template: str = "",
+    fontscale: float = 1,
 ) -> geoviews.DynamicMap:
     import holoviews.streams as hv_streams
 
@@ -404,6 +410,7 @@ def get_pointer_timeseries(
         source_raster=source_raster,
         stream_class=hv_streams.PointerXY,
         title_template=title_template,
+        fontscale=fontscale,
     )
     return dmap
 
