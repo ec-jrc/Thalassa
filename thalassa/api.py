@@ -254,6 +254,8 @@ def _get_stream_timeseries(
             ts = ds.isel(node=node_index)
             lon = float(ts.lon.data)
             lat = float(ts.lat.data)
+            with utils.timer("tsplot: loaded ts in"):
+                ts[variable].load()
             title = title_template.format(lon=lon, lat=lat, variable=variable, node_index=node_index)
             plot = hv.Curve(ts[variable])
         logger.info("tsplot: title: %s", title)

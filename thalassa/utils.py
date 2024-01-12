@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import logging
+import sys
+import time
 import typing as T
+
+import decorator
 
 
 if T.TYPE_CHECKING:
@@ -349,3 +353,20 @@ def generate_mesh_polygon(ds: xarray.Dataset) -> geopandas.GeoDataFrame:
     # convert to GeoDataFrame
     gdf = gpd.GeoDataFrame(geometry=[polygon])
     return gdf
+
+
+@decorator.contextmanager
+def timer(
+    msg: str = "",
+    log_level: int = logging.DEBUG,
+    stacklevel: int = 0,
+) -> T.Generator[T.Any, T.Any, T.Any]:
+    t1 = time.perf_counter()
+    yield
+    elapsed = time.perf_counter() - t1
+    if not stacklevel:
+        stacklevel = 5 if sys._getframe(2).f_code.co_filename.endswith("site-packages/decorator.py") else 3
+    if msg:
+        logger.log(log_level, "%s: %.9fs", msg, elapsed, stacklevel=stacklevel)
+    else:
+        logger.log(log_level, "%.9fs", elapsed, stacklevel=stacklevel)
