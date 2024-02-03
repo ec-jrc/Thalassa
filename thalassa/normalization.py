@@ -87,12 +87,12 @@ def is_adcirc(ds: xarray.Dataset) -> bool:
 def infer_format(ds: xarray.Dataset) -> THALASSA_FORMATS:
     if is_schism(ds):
         fmt = THALASSA_FORMATS.SCHISM
-    elif is_adcirc(ds):
-        fmt = THALASSA_FORMATS.ADCIRC
     elif is_pyposeidon(ds):
         fmt = THALASSA_FORMATS.PYPOSEIDON
     elif is_generic(ds):
         fmt = THALASSA_FORMATS.GENERIC
+    elif is_adcirc(ds):
+        fmt = THALASSA_FORMATS.ADCIRC
     else:
         fmt = THALASSA_FORMATS.UNKNOWN
     logger.debug("Inferred format: %s", fmt)
