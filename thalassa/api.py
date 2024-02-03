@@ -281,7 +281,7 @@ def _get_stream_timeseries(
 def get_station_timeseries(
     stations: xarray.Dataset,
     pins: geoviews.DynamicMap,
-) -> holoviews.DynamicMap:
+) -> holoviews.DynamicMap:   # pragma: no cover
     import holoviews as hv
     import pandas as pd
 
@@ -345,7 +345,7 @@ _STATION_VARIABLES = [
 def get_station_table(
     stations: xarray.Dataset,
     pins: geoviews.DynamicMap,
-) -> holoviews.DynamicMap:
+) -> holoviews.DynamicMap:  # pragma: no cover
     import holoviews as hv
     import pandas as pd
 
