@@ -12,7 +12,7 @@ from . import utils
 
 # from holoviews import opts as hvopts
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING:  # pragma: no cover
     import bokeh.models
     import geoviews
     import holoviews

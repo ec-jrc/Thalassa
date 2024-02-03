@@ -5,7 +5,7 @@ import logging
 import pathlib
 import typing
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     import xarray
 
 from . import api
