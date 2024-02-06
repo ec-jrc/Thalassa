@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+
+set -Eeuo pipefail
+
+# Check if an argument has been provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <path_to_git_repo>"
+    exit 1
+fi
+
+TAG="${1}"
+
+if git diff --exit-code pyproject.toml; then
+  poetry version "${TAG}"
+  git add pyproject.toml
+  git commit -m "release: version ${TAG}"
+  git tag --force v"${TAG}" -m "Release ${TAG}"
+else
+  printf 'pyproject.toml contains changes. Stash them and try again'
+  exit 1
+fi
