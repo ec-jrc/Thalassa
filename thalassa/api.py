@@ -235,7 +235,7 @@ def _get_stream_timeseries(
     import holoviews.streams as hv_streams
     import pyproj
 
-    to_wgs84 = pyproj.Transformer.from_crs("EPSG:3857", "EPSG:4326").transform
+    to_wgs84 = pyproj.Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True).transform
 
     if stream_class not in {hv_streams.Tap, hv_streams.PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
