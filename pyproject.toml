@@ -29,7 +29,7 @@ dask = {version = "*", extras = ["array", "dataframe", "diagnostics", "distribut
 datashader = "*"
 geopandas = "*"
 geoviews = ">=1.10"
-holoviews = "*"
+holoviews = "*, !=1.18.2"  # https://github.com/holoviz/holoviews/issues/6101
 numba = ">0.52"
 numpy = "*"
 numpy-indexed = "*"
