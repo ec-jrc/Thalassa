@@ -110,6 +110,8 @@ def create_trimesh(
         variable: The data variable we want to visualize
     """
     import geoviews as gv
+    from geoviews.operation import project
+    from cartopy import crs
 
     if isinstance(ds_or_trimesh, gv.TriMesh):
         # This is already a trimesh, nothing to do
@@ -124,6 +126,8 @@ def create_trimesh(
         points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
     else:
         points_gv = gv.Points(points_df, kdims=["lon", "lat"])
+    with utils.timer("trimesh: reproject points to GOOGLE_MERCATOR"):
+        points_gv = project(points_gv, projection=crs.GOOGLE_MERCATOR)
     trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
     return trimesh
 
