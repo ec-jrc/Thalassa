@@ -212,11 +212,11 @@ def get_hover(variable: str) -> bokeh.models.HoverTool:
 
     hover = bokeh.models.HoverTool(
         tooltips=[
-            ("time", "@time{%F %T}"),
+            ("time", "@{time}{%F %T}"),
             (f"{variable}", f"@{variable}"),
         ],
         formatters={
-            "@time": "datetime",
+            "@{time}": "datetime",
         },
     )
     return hover
