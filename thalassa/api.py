@@ -195,7 +195,6 @@ def get_raster(
         kwargs["x_range"] = x_range
     if y_range:
         kwargs["y_range"] = y_range
-    logger.debug("rasterize kwargs: %s", kwargs)
     raster = hv_operation_datashader.rasterize(**kwargs).opts(
         cmap=cmap,
         clabel=clabel,
@@ -234,7 +233,9 @@ def _get_stream_timeseries(
     import geoviews as gv
     import holoviews as hv
     import holoviews.streams as hv_streams
+    import pyproj
 
+    to_wgs84 = pyproj.Transformer.from_crs("EPSG:3857", "EPSG:4326").transform
 
     if stream_class not in {hv_streams.Tap, hv_streams.PointerXY}:
         raise ValueError("Unsupported Stream class. Please choose either Tap or PointerXY")
@@ -244,7 +245,7 @@ def _get_stream_timeseries(
     initial_render = True
 
     def callback(x: float, y: float) -> holoviews.Curve:
-        logger.debug("tsplot: start")
+        logger.debug("tsplot: start - %s, %s", x, y)
         nonlocal initial_render
         if initial_render or (not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y)):
             # if the point is not inside the mesh, then omit the timeseries
@@ -254,6 +255,7 @@ def _get_stream_timeseries(
             title = "Please click on the map!"
             plot = hv.Curve([])
         else:
+            x, y = to_wgs84(x, y)
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
             logger.debug("tsplot: node index: %s", node_index)
             ts = ds.isel(node=node_index)

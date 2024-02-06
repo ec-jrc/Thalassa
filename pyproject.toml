@@ -34,6 +34,7 @@ numba = ">0.52"
 numpy = "*"
 numpy-indexed = "*"
 pandas = "*"
+pyproj = "*"
 scipy = "*"
 shapely = "*"
 xarray = {version = "*", extras = ["io", "accel"]}
