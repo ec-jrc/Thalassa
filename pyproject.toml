@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "thalassa"
-version = "0.4.2"
+version = "0.4.3"
 description = "A library for visualizing large scale results of hydrodynamic simulations"
 authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
 license = 'EUPL-1.2'
