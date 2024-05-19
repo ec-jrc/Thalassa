@@ -144,7 +144,7 @@ def plot(
         clim_max: The upper limit for the colorbar.
         x_range: A tuple indicating the minimum and maximum longitude to be displayed.
         y_range: A tuple indicating the minimum and maximum latitude to be displayed.
-        show_mesh: A boolean flag indicating whether the mesh should be overlayed on the rendered variable.
+        show_mesh: A boolean flag indicating whether the mesh should be overlaid on the rendered variable.
             Enabling this makes rendering slower.
 
     """
