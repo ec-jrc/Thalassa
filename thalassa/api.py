@@ -67,14 +67,14 @@ def open_dataset(
     Parameters:
         path: The path to the dataset file (netCDF, zarr, grib)
         normalize: Boolean flag indicating whether the dataset should be converted/normalized to the "Thalassa schema".
-            Normalization is currently only supported for ``SCHISM`` and ``ADCIRC`` netcdf files.
+            Normalization is currently only supported for ``SCHISM``, ``TELEMAC``,  and ``ADCIRC`` netcdf files.
         kwargs: The ``kwargs`` are being passed through to ``xarray.open_dataset``.
 
     """
     import xarray as xr
 
     default_kwargs: dict[str, T.Any] = dict(
-        mask_and_scale=True,
+        # mask_and_scale=True,
         cache=False,
         drop_variables=ADCIRC_VARIABLES_TO_BE_DROPPED,
     )

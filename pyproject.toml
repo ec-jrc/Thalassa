@@ -49,6 +49,7 @@ ipykernel = "*"
 ipython = "*"
 papermill = "*"
 pandas-stubs = "*"
+xarray-selafin = "*"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "*"

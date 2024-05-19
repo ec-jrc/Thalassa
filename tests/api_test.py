@@ -9,11 +9,17 @@ from thalassa import api
 from thalassa import normalization
 
 ADCIRC_NC = DATA_DIR / "fort.63.nc"
+SELAFIN = DATA_DIR / "iceland.slf"
 
-
-def test_main_api():
-    variable = "zeta"
-    ds = api.open_dataset(ADCIRC_NC)
+@pytest.mark.parametrize(
+    "file,variable",
+    [
+        pytest.param(ADCIRC_NC, "zeta"),
+        pytest.param(SELAFIN, "S"),
+    ],
+)
+def test_main_api(file, variable):
+    ds = api.open_dataset(file)
     assert normalization.is_generic(ds)
 
     # Create objects
@@ -34,9 +40,15 @@ def test_main_api():
     hv.render(pointer_ts, backend="bokeh")
 
 
-@pytest.mark.parametrize("variable", [None, "zeta"])
-def test_create_trimesh(variable):
-    ds = api.open_dataset(ADCIRC_NC)
+@pytest.mark.parametrize(
+    "file,variable",
+    [
+        pytest.param(ADCIRC_NC, "zeta"),
+        pytest.param(SELAFIN, "S"),
+    ],
+)
+def test_create_trimesh(file, variable):
+    ds = api.open_dataset(file)
     trimesh = api.create_trimesh(ds, variable=variable)
     assert isinstance(trimesh, gv.TriMesh)
 

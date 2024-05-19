@@ -14,6 +14,7 @@ Thalassa is currently supporting visualization of the output of the following so
 
 - [Schism](https://github.com/schism-dev/schism)
 - [ADCIRC](https://adcirc.org/)
+- [openTELEMAC](https://www.opentelemac.org/)
 
 Adding support for new solvers is relatively straight-forward.
 
@@ -29,6 +30,11 @@ Adding support for new solvers is relatively straight-forward.
 
 ```
 pip install thalassa
+```
+for Selafin files (openTELEMAC outputs):
+```
+pip install thalassa
+pip install xarray-selafin
 ```
 
 ### Conda

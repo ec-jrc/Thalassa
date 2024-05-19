@@ -12,6 +12,11 @@
 ```
 pip install thalassa
 ```
+for Selafin files (openTELEMAC outputs):
+```
+pip install thalassa
+pip install xarray-selafin
+```
 
 ### Conda
 

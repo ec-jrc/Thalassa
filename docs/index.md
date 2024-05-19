@@ -16,6 +16,7 @@ Thalassa is currently supporting visualization of the output of the following so
 
 - [Schism](https://github.com/schism-dev/schism)
 - [ADCIRC](https://adcirc.org/)
+- [TELEMAC](https://www.opentelemac.org)
 
 Adding support for new solvers is relatively straight-forward.
 
