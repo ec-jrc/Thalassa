@@ -16,11 +16,29 @@ if T.TYPE_CHECKING:  # pragma: no cover
     import bokeh.models
     import geoviews
     import holoviews
+    import pyproj
     import xarray
     from holoviews.streams import Stream
     from bokeh.models.formatters import DatetimeTickFormatter
 
 logger = logging.getLogger(__name__)
+
+
+@functools.cache
+def _get_transformer(from_crs: str = "EPSG:4326", to_crs: str = "EPSG:3857") -> pyproj.Transformer:
+    import pyproj
+
+    transformer = pyproj.Transformer.from_crs(from_crs, to_crs, always_xy=True)
+    return transformer
+
+
+def _resolve_ranges(x_range: tuple[float, float] | None, y_range: tuple[float, float] | None, kwargs: T.Any) -> None:
+    if x_range or y_range:
+        transformer = _get_transformer(from_crs="EPSG:4326", to_crs="EPSG:3857")
+        if x_range:
+            kwargs["x_range"] = transformer.transform(*x_range)
+        if y_range:
+            kwargs["y_range"] = transformer.transform(*y_range)
 
 
 # ADCIRC datasets are not compatible with xarray:
@@ -99,7 +117,7 @@ def get_dtf() -> DatetimeTickFormatter:
 
 def create_trimesh(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
-    variable: str | None = None,
+    variable: str = "",
 ) -> geoviews.TriMesh:
     """
     Create a ``geoviews.TriMesh`` object from the provided dataset.
@@ -110,25 +128,33 @@ def create_trimesh(
         variable: The data variable we want to visualize
     """
     import geoviews as gv
-    from geoviews.operation import project
     from cartopy import crs
 
     if isinstance(ds_or_trimesh, gv.TriMesh):
         # This is already a trimesh, nothing to do
         return ds_or_trimesh
-    # create the trimesh object
-    ds = ds_or_trimesh
-    columns = ["lon", "lat"]
-    if variable is not None:
-        columns.append(variable)
-    points_df = ds[columns].to_dataframe().reset_index(drop=True)
-    if variable:
-        points_gv = gv.Points(points_df, kdims=["lon", "lat"], vdims=[variable])
     else:
-        points_gv = gv.Points(points_df, kdims=["lon", "lat"])
-    with utils.timer("trimesh: reproject points to GOOGLE_MERCATOR"):
-        points_gv = project(points_gv, projection=crs.GOOGLE_MERCATOR)
-    trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
+        ds = ds_or_trimesh
+    # create the trimesh object
+    # Start by getting a "tabular" dataset (i.e. a pandas dataframe).
+    columns = ["lon", "lat"]
+    if variable:
+        columns.append(variable)
+    points_df = ds[columns].to_dataframe()
+    # Convert the data to Google Mercator. This makes interactive usage faster
+    transformer = _get_transformer(from_crs="EPSG:4326", to_crs="EPSG:3857")
+    tlon, tlat = transformer.transform(points_df.lon, points_df.lat)
+    points_df = points_df.assign(lon=tlon, lat=tlat)
+    # Create the geoviews object
+    kwargs = dict(data=points_df, kdims=["lon", "lat"], crs=crs.GOOGLE_MERCATOR)
+    if variable:
+        kwargs["vdims"] = [variable]
+    points_gv = gv.Points(**kwargs)
+    # Create the trimesh
+    if variable:
+        trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
+    else:
+        trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv))
     return trimesh
 
 
@@ -158,10 +184,7 @@ def get_wireframe(
 
     trimesh = create_trimesh(ds_or_trimesh)
     kwargs = dict(element=trimesh.edgepaths, precompute=True)
-    if x_range:
-        kwargs["x_range"] = x_range
-    if y_range:
-        kwargs["y_range"] = y_range
+    _resolve_ranges(x_range=x_range, y_range=y_range, kwargs=kwargs)
     tools = ["crosshair"]
     if hover:
         tools.append("hover")
@@ -176,7 +199,7 @@ def get_wireframe(
 
 def get_raster(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
-    variable: str | None = None,
+    variable: str = "",
     title: str = "",
     cmap: str = "plasma",
     colorbar: bool = True,
@@ -195,10 +218,7 @@ def get_raster(
 
     trimesh = create_trimesh(ds_or_trimesh=ds_or_trimesh, variable=variable)
     kwargs = dict(element=trimesh, precompute=True)
-    if x_range:
-        kwargs["x_range"] = x_range
-    if y_range:
-        kwargs["y_range"] = y_range
+    _resolve_ranges(x_range=x_range, y_range=y_range, kwargs=kwargs)
     raster = hv_operation_datashader.rasterize(**kwargs).opts(
         cmap=cmap,
         clabel=clabel,
