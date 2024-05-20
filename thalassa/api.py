@@ -150,6 +150,7 @@ def get_wireframe(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
+    title: str = "Mesh",
     hover: bool = True,
 ) -> geoviews.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
@@ -167,7 +168,7 @@ def get_wireframe(
     wireframe = hv_operation_datashader.rasterize(**kwargs).opts(
         tools=tools,
         cmap=["black"],
-        title="Mesh",
+        title=title,
     )
     wireframe = hv_operation_datashader.dynspread(wireframe)
     return wireframe
