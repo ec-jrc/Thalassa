@@ -161,8 +161,11 @@ def get_wireframe(
         kwargs["x_range"] = x_range
     if y_range:
         kwargs["y_range"] = y_range
+    tools = ["crosshair"]
+    if hover:
+        tools.append("hover")
     wireframe = hv_operation_datashader.rasterize(**kwargs).opts(
-        tools=["hover"] if hover else [],
+        tools=tools,
         cmap=["black"],
         title="Mesh",
     )
@@ -201,7 +204,7 @@ def get_raster(
         colorbar=colorbar,
         clim=(clim_min, clim_max),
         title=title or trimesh.name,
-        tools=["hover"],
+        tools=["crosshair", "hover"],
     )
     return raster
 
