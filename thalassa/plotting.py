@@ -36,6 +36,8 @@ def plot_mesh(
     ds: xarray.Dataset,
     bbox: shapely.Polygon | None = None,
     title: str = "Mesh",
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
 ) -> geoviews.DynamicMap:
     """
     Plot the mesh of the dataset
@@ -71,7 +73,7 @@ def plot_mesh(
     if bbox:
         ds = utils.crop(ds, bbox)
     tiles = api.get_tiles()
-    mesh = api.get_wireframe(ds)
+    mesh = api.get_wireframe(ds, x_range=x_range, y_range=y_range, hover=True)
     overlay = hv.Overlay((tiles, mesh)).opts(title=title).collate()
     return overlay
 
@@ -170,7 +172,7 @@ def plot(
     tiles = api.get_tiles()
     components = [tiles, raster]
     if show_mesh:
-        mesh = api.get_wireframe(ds)
+        mesh = api.get_wireframe(ds, x_range=x_range, y_range=y_range, hover=False)
         components.append(mesh)
     overlay = hv.Overlay(components)
     dmap = overlay.collate()
