@@ -193,7 +193,6 @@ def get_wireframe(
         cmap=["black"],
         title=title,
     )
-    wireframe = hv_operation_datashader.dynspread(wireframe)
     return wireframe
 
 
