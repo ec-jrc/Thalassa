@@ -35,6 +35,7 @@ def _sanity_check(ds: xarray.Dataset, variable: str) -> None:
 
 def plot_nodes(
     ds: xarray.Dataset,
+    *,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     size: float = 4,
@@ -70,6 +71,7 @@ def plot_nodes(
 
 def plot_mesh(
     ds: xarray.Dataset,
+    *,
     bbox: shapely.Polygon | None = None,
     title: str = "Mesh",
     x_range: tuple[float, float] | None = None,
@@ -117,6 +119,7 @@ def plot_mesh(
 def plot(
     ds: xarray.Dataset,
     variable: str,
+    *,
     bbox: shapely.Polygon | None = None,
     title: str = "",
     cmap: str = "plasma",

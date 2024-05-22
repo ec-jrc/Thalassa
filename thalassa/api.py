@@ -174,6 +174,7 @@ def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> g
 
 def get_nodes(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
+    *,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     size: float = 4,
@@ -201,6 +202,7 @@ def get_nodes(
 
 def get_wireframe(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
+    *,
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     title: str = "Mesh",
@@ -226,6 +228,7 @@ def get_wireframe(
 def get_raster(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     variable: str = "",
+    *,
     title: str = "",
     cmap: str = "plasma",
     colorbar: bool = True,
