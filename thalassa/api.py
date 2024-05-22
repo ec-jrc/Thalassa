@@ -206,7 +206,7 @@ def get_wireframe(
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     title: str = "Mesh",
-    hover: bool = True,
+    hover: bool = False,
 ) -> geoviews.DynamicMap:
     """Return a ``DynamicMap`` with a wireframe of the mesh."""
     import holoviews.operation.datashader as hv_operation_datashader
