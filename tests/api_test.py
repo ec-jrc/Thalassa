@@ -25,19 +25,23 @@ def test_main_api(file, variable):
     # Create objects
     trimesh = api.create_trimesh(ds.sel(time=ds.time[0]), variable=variable)
     wireframe = api.get_wireframe(trimesh)
+    nodes = api.get_nodes(trimesh)
     raster = api.get_raster(trimesh)
     tap_ts = api.get_tap_timeseries(ds, variable, raster)
     pointer_ts = api.get_pointer_timeseries(ds, variable, raster)
-    assert isinstance(wireframe, hv.DynamicMap)
-    assert isinstance(raster, hv.DynamicMap)
-    assert isinstance(tap_ts, hv.DynamicMap)
-    assert isinstance(pointer_ts, hv.DynamicMap)
 
     # Render them!
-    hv.render(raster, backend="bokeh")
-    hv.render(wireframe, backend="bokeh")
-    hv.render(tap_ts, backend="bokeh")
+    hv.render(nodes, backend="bokeh")
     hv.render(pointer_ts, backend="bokeh")
+    hv.render(raster, backend="bokeh")
+    hv.render(tap_ts, backend="bokeh")
+    hv.render(wireframe, backend="bokeh")
+
+    assert isinstance(nodes, gv.Points)
+    assert isinstance(pointer_ts, hv.DynamicMap)
+    assert isinstance(raster, hv.DynamicMap)
+    assert isinstance(tap_ts, hv.DynamicMap)
+    assert isinstance(wireframe, hv.DynamicMap)
 
 
 @pytest.mark.parametrize(
@@ -56,3 +60,4 @@ def test_create_trimesh(file, variable):
 def test_get_tiles():
     tiles = api.get_tiles()
     hv.render(tiles, backend="bokeh")
+    assert isinstance(tiles, gv.WMTS), type(tiles)

@@ -3,9 +3,23 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
+import shapely
 import xarray as xr
 
+from . import DATA_DIR
+from thalassa import api
 from thalassa import utils
+
+
+ADCIRC_NC = DATA_DIR / "fort.63.nc"
+
+
+def test_crop():
+    ds = api.open_dataset(ADCIRC_NC)
+    assert len(ds.node) == 3070
+    bbox = shapely.box(-72.6, 40.75, -72.2, 40.9)
+    cropped_ds = utils.crop(ds, bbox=bbox)
+    assert len(cropped_ds.node) == 1363
 
 
 def test_generate_thalassa_ds():

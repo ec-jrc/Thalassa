@@ -30,11 +30,18 @@ def test_plot(fort_ds):
     assert isinstance(dmap, hv.DynamicMap)
 
 
+def test_plot_show_mesh(fort_ds):
+    dmap = thalassa.plot(ds=fort_ds.isel(time=0), variable="zeta", show_mesh=True)
     assert isinstance(dmap, hv.DynamicMap)
 
 
-def test_plot_show_mesh(fort_ds):
-    dmap = thalassa.plot(ds=fort_ds.isel(time=0), variable="zeta", show_mesh=True)
+def test_plot_show_nodes(fort_ds):
+    dmap = thalassa.plot(ds=fort_ds.isel(time=0), variable="zeta", show_nodes=True)
+    assert isinstance(dmap, hv.DynamicMap)
+
+
+def test_plot_show_mesh_show_nodes(fort_ds):
+    dmap = thalassa.plot(ds=fort_ds.isel(time=0), variable="zeta", show_mesh=True, show_nodes=True)
     assert isinstance(dmap, hv.DynamicMap)
 
 
@@ -43,6 +50,10 @@ def test_plot_mesh(fort_ds):
     assert isinstance(dmap, hv.DynamicMap)
 
 
+def test_plot_nodes(fort_ds):
+    hv.extension("bokeh")
+    plot = thalassa.plot_nodes(ds=fort_ds)
+    assert isinstance(plot, hv.Overlay)
 
 
 def test_plot_ts(fort_ds):
