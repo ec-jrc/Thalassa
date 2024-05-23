@@ -6,12 +6,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # pragma: no cover
     import geoviews
     import holoviews
-    import shapely
     import xarray
 
 from . import api
 from . import normalization
-from . import utils
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +34,10 @@ def _sanity_check(ds: xarray.Dataset, variable: str) -> None:
 def plot_nodes(
     ds: xarray.Dataset,
     *,
+    title: str = "Nodes",
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     size: float = 4,
-    title: str = "Nodes",
 ) -> holoviews.Overlay:
     """
     Plot the nodes of the mesh.
@@ -57,7 +55,7 @@ def plot_nodes(
         title: The title of the plot
         x_range: A tuple specifying the range of the longitudes of the plotted area
         y_range: A tuple specifying the range of the latitudes of the plotted area
-        title: The title of the plot
+        size: The size of the points in the plot
 
     """
     import holoviews as hv
@@ -72,7 +70,6 @@ def plot_nodes(
 def plot_mesh(
     ds: xarray.Dataset,
     *,
-    bbox: shapely.Polygon | None = None,
     title: str = "Mesh",
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
@@ -88,28 +85,16 @@ def plot_mesh(
         thalassa.plot_mesh(ds)
         ```
 
-        If we want to on-the-fly crop the dataset we can pass `bbox`, too:
-
-        ``` python
-        import shapely
-        import thalassa
-
-        bbox = shapely.box(0, 0, 1, 1)
-        ds = thalassa.open_dataset("some_netcdf.nc")
-        thalassa.plot_mesh(ds, bbox=bbox)
-        ```
-
     Parameters:
         ds: The dataset whose mesh we want to visualize. It must adhere to the "thalassa schema"
-        bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
         title: The title of the plot.
+        x_range: A tuple specifying the range of the longitudes of the plotted area
+        y_range: A tuple specifying the range of the latitudes of the plotted area
 
     """
     import holoviews as hv
 
     ds = normalization.normalize(ds)
-    if bbox:
-        ds = utils.crop(ds, bbox)
     tiles = api.get_tiles()
     mesh = api.get_wireframe(ds, x_range=x_range, y_range=y_range, hover=True)
     overlay = hv.Overlay((tiles, mesh)).opts(title=title).collate()
@@ -120,7 +105,6 @@ def plot(
     ds: xarray.Dataset,
     variable: str,
     *,
-    bbox: shapely.Polygon | None = None,
     title: str = "",
     cmap: str = "plasma",
     colorbar: bool = True,
@@ -164,21 +148,9 @@ def plot(
         thalassa.plot(ds, variable="zeta", clim_min=1, clim_max=3, clabel="meter")
         ```
 
-        If we want to on-the-fly crop the dataset we can pass `bbox`, too:
-
-        ``` python
-        import shapely
-        import thalassa
-
-        bbox = shapely.box(0, 0, 1, 1)
-        ds = thalassa.open_dataset("some_netcdf.nc")
-        thalassa.plot(ds, variable="depth", bbox=bbox)
-        ```
-
     Parameters:
         ds: The dataset which will get visualized. It must adhere to the "thalassa schema".
         variable: The dataset's variable which we want to visualize.
-        bbox: A Shapely polygon which will be used to (on-the-fly) crop the `dataset`.
         title: The title of the plot. Defaults to `variable`.
         cmap: The colormap to use.
         colorbar: Boolean flag indicating whether the plot should have an integrated colorbar.
@@ -198,8 +170,6 @@ def plot(
 
     ds = normalization.normalize(ds)
     _sanity_check(ds=ds, variable=variable)
-    if bbox:
-        ds = utils.crop(ds, bbox)
     trimesh = api.create_trimesh(ds_or_trimesh=ds, variable=variable)
     raster = api.get_raster(
         ds_or_trimesh=trimesh,
@@ -246,7 +216,7 @@ def plot_ts(
         main_plot = thalassa.plot(ds, variable="zeta_max")
         ts_plot = thalassa.plot_ts(ds, variable="zeta", source_plot=main_plot)
 
-        (main_plot.opts(width=600) + ts_plot.opts(width=600)).cols(1)
+        (main_plot + ts_plot.opts(width=600)).cols(1)
         ```
 
     Parameters:
