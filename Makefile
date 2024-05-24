@@ -21,17 +21,17 @@ test:
 
 cov:
 	coverage erase
-	python -m pytest --cov=thalassa --cov-report term-missing --durations=10
+	python -m pytest \
+		--numprocesses=auto \
+		--durations=10 \
+		--cov=thalassa \
+		--cov-report term-missing
 
 clean_notebooks:
 	pre-commit run nbstripout
 
 exec_notebooks:
-	set -e; \
-	for file in $$(git -C notebooks ls-files); do \
-		echo $$file; \
-		timeout 600 papermill --start-timeout 1 --cwd notebooks notebooks/$$file --progress-bar /dev/null; \
-	done
+	pytest -n auto --nbmake --nbmake-timeout=20 --nbmake-kernel=python3 $$(git ls-files | grep ipynb)
 
 deps:
 	pre-commit run poetry-lock -a

@@ -3,21 +3,21 @@ name: test
 on:
   push:
     branches:
-      - 'main'
-      - 'master'
+      - "main"
+      - "master"
     paths:
-      - '**.py'
-      - '.github/workflows/*test*.yml'
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'requirements/requirements*.txt'
+      - "**.py"
+      - ".github/workflows/*test*.yml"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "requirements/requirements*.txt"
   pull_request:
     paths:
-      - '**.py'
-      - '.github/workflows/*test*.yml'
-      - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'requirements/requirements*.txt'
+      - "**.py"
+      - ".github/workflows/*test*.yml"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - "requirements/requirements*.txt"
 
 jobs:
   test:
@@ -25,8 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ 'ubuntu-latest' ]
-        python: [ '3.9', '3.10', '3.11', '3.12']
+        os: ["ubuntu-latest"]
+        python: ["3.9", "3.10", "3.11", "3.12"]
         # include:
         #   - os: "macos-latest"
         #     python: "3.12"
@@ -58,10 +58,10 @@ jobs:
       - run: pytest --version
       - run: python -m pip cache info
       - run: mypy thalassa
+        if: ${{ matrix.python == '3.12' }} # We only run on a single matrix OS in order to speed up CI runtime
       - run: make cov
-      # We only run on a single matrix OS in order to speed up CI runtime
       - run: make exec_notebooks
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.python == '3.12' }} # We only run on a single matrix OS in order to speed up CI runtime
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -41,14 +41,15 @@ xarray = {version = "*", extras = ["io", "accel"]}
 
 [tool.poetry.group.dev.dependencies]
 covdefaults = "*"
-mypy = ">=1"
-types-decorator = "*"
-pytest = "*"
-pytest-cov = ">=3.0"
 ipykernel = "*"
 ipython = "*"
-papermill = "*"
+mypy = ">=1"
+nbmake = "*"
 pandas-stubs = "*"
+pytest = "*"
+pytest-cov = ">=3.0"
+pytest-xdist = "*"
+types-decorator = "*"
 xarray-selafin = "*"
 
 [tool.poetry.group.docs.dependencies]
