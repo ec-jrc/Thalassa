@@ -172,6 +172,33 @@ def get_tiles(url: str = "http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png") -> g
     return tiles
 
 
+def get_nodes(
+    ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
+    size: float = 4,
+    title: str = "Nodes",
+    hover: bool = True,
+) -> geoviews.Points:
+    """Return a ``DynamicMap`` with the nodes of the mesh."""
+    from cartopy import crs
+    import geoviews as gv
+
+    trimesh = create_trimesh(ds_or_trimesh)
+    kwargs: dict[str, T.Any] = {}
+    _resolve_ranges(x_range=x_range, y_range=y_range, kwargs=kwargs)
+    tools = ["crosshair"]
+    if hover:
+        tools.append("hover")
+    points = gv.Points(
+        trimesh.nodes.data.rename(columns={"index": "node"}),
+        kdims=["lon", "lat"],
+        vdims=["node"],
+        crs=crs.GOOGLE_MERCATOR,
+    )
+    return points.opts(tools=tools, size=size, title=title, color="green")
+
+
 def get_wireframe(
     ds_or_trimesh: geoviews.TriMesh | xarray.Dataset,
     x_range: tuple[float, float] | None = None,
@@ -367,7 +394,7 @@ _STATION_VARIABLES = [
     "Correlation Coefficient",
     "R^2",
     "Nash-Sutcliffe Coefficient",
-    "lamda index",
+    "lambda index",
 ]
 
 

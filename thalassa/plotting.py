@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     import geoviews
+    import holoviews
     import shapely
     import xarray
 
@@ -30,6 +31,41 @@ def _sanity_check(ds: xarray.Dataset, variable: str) -> None:
             f"to filter the dataset accordingly. Current dimensions are: {ds[variable].dims}"
         )
         raise ValueError(msg)
+
+
+def plot_nodes(
+    ds: xarray.Dataset,
+    x_range: tuple[float, float] | None = None,
+    y_range: tuple[float, float] | None = None,
+    size: float = 4,
+    title: str = "Nodes",
+) -> holoviews.Overlay:
+    """
+    Plot the nodes of the mesh.
+
+    Examples:
+        ``` python
+        import thalassa
+
+        ds = thalassa.open_dataset("some_netcdf.nc")
+        thalassa.plot_nodes(ds)
+        ```
+
+    Parameters:
+        ds: The dataset whose mesh we want to visualize. It must adhere to the "thalassa schema"
+        title: The title of the plot
+        x_range: A tuple specifying the range of the longitudes of the plotted area
+        y_range: A tuple specifying the range of the latitudes of the plotted area
+        title: The title of the plot
+
+    """
+    import holoviews as hv
+
+    ds = normalization.normalize(ds)
+    tiles = api.get_tiles()
+    nodes = api.get_nodes(ds, x_range=x_range, y_range=y_range, hover=True, size=size)
+    overlay = hv.Overlay((tiles, nodes)).opts(title=title).collate()
+    return overlay
 
 
 def plot_mesh(
@@ -91,6 +127,8 @@ def plot(
     x_range: tuple[float, float] | None = None,
     y_range: tuple[float, float] | None = None,
     show_mesh: bool = False,
+    show_nodes: bool = False,
+    node_size: float = 3,
 ) -> geoviews.DynamicMap:
     """
     Return the plot of the specified `variable`.
@@ -146,8 +184,11 @@ def plot(
         clim_max: The upper limit for the colorbar.
         x_range: A tuple indicating the minimum and maximum longitude to be displayed.
         y_range: A tuple indicating the minimum and maximum latitude to be displayed.
-        show_mesh: A boolean flag indicating whether the mesh should be overlaid on the rendered variable.
+        show_mesh: A boolean flag indicating whether the mesh should be overlaid on top of the data.
             Enabling this makes rendering slower.
+        show_nodes: A boolean flag indicating whether the nodes should be overlaid on top of the data.
+            Enabling this makes rendering slower.
+        node_size: A float value indicating the size of the nodes. Only used if `show_nodes=True`.
 
     """
     import holoviews as hv
@@ -174,6 +215,9 @@ def plot(
     if show_mesh:
         mesh = api.get_wireframe(ds, x_range=x_range, y_range=y_range, hover=False)
         components.append(mesh)
+    if show_nodes:
+        nodes = api.get_nodes(ds, x_range=x_range, y_range=y_range, hover=True, size=node_size)
+        components.append(nodes)
     overlay = hv.Overlay(components)
     dmap = overlay.collate()
     # Keep a reference of the raster DynamicMap, in order to be able to retrieve it from plot_ts
