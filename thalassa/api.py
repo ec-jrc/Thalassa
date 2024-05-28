@@ -301,24 +301,25 @@ def _get_stream_timeseries(
         logger.debug("tsplot: start - %s, %s", x, y)
         nonlocal initial_render
         if initial_render or (not utils.is_point_in_the_raster(raster=source_raster, lon=x, lat=y)):
-            # if the point is not inside the mesh, then omit the timeseries
-            node_index = float("NaN")
-            lon = x
-            lat = y
+            # if the point is not inside the mesh, then display an empty graph
+            # Using slice(0, 0) ensures that there are no data to display but we keep the correct
+            # variable names to display as labels in the X and Y axis.
+            ts = ds.isel(node=0, time=slice(0, 0))
             title = "Please click on the map!"
-            plot = hv.Curve([])
         else:
             x, y = to_wgs84(x, y)
             node_index = utils.get_index_of_nearest_node(ds=ds, lon=x, lat=y)
-            logger.debug("tsplot: node index: %s", node_index)
             ts = ds.isel(node=node_index)
-            lon = float(ts.lon.data)
-            lat = float(ts.lat.data)
-            with utils.timer("tsplot: loaded ts in"):
-                ts[variable].load()
-            title = title_template.format(lon=lon, lat=lat, variable=variable, node_index=node_index)
-            plot = hv.Curve(ts[variable])
-        logger.info("tsplot: title: %s", title)
+            title = title_template.format(
+                lon=float(ts.lon.data),
+                lat=float(ts.lat.data),
+                variable=variable,
+                node_index=node_index,
+            )
+        logger.debug("tsplot: title: %s", title)
+        with utils.timer("tsplot: data loaded ts in"):
+            ts[variable].load()
+        plot = hv.Curve(ts[variable])
         initial_render = False
         plot = plot.opts(
             title=title,
