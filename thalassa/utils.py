@@ -182,11 +182,6 @@ def get_index_of_nearest_node(ds: xarray.Dataset, lon: float, lat: float) -> int
     return index_of_nearest_node
 
 
-def extract_timeseries(ds: xarray.Dataset, variable: str, lon: float, lat: float) -> xarray.DataArray:
-    index = get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
-    return ds[variable].isel(node=index)
-
-
 def drop_elements_crossing_idl(
     ds: xarray.Dataset,
     max_lon: float = 10,

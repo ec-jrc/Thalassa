@@ -482,12 +482,6 @@ def get_pointer_timeseries(
     return dmap
 
 
-def extract_timeseries(ds: xarray.Dataset, variable: str, lon: float, lat: float) -> xarray.DataArray:
-    index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
-    # extracted = ds[[variable, "lon", "lat"]].isel(node=index)
-    return ds[variable].isel(node=index)
-
-
 # def plot_timeseries(ds: xarray.DataArray, lon: float, lat: float) -> geoviews.DynamicMap:
 #     node_index = utils.get_index_of_nearest_node(ds=ds, lon=lon, lat=lat)
 #     node_lon = ds.lon.isel(node_index)
