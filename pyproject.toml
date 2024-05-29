@@ -23,7 +23,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.9, <4.0"
-bokeh = ">=3.0"
+bokeh = ">=3"
 Cartopy = "*"
 dask = {version = "*", extras = ["array", "dataframe", "diagnostics", "distributed", "complete"]}
 datashader = "*"
@@ -34,6 +34,7 @@ numba = ">0.52"
 numpy = "*"
 numpy-indexed = "*"
 pandas = "*"
+panel = "*, !=1.4.3"  # https://github.com/holoviz/panel/issues/6865
 pyproj = "*"
 scipy = "*"
 shapely = "*"
