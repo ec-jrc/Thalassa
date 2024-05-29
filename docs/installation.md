@@ -4,18 +4,13 @@
 
 1. Install the binary dependencies:
 
-    - `python >= 3.9`
-    - `geos`
+   - `python >= 3.9`
+   - `geos`
 
 2. Install from PyPI with:
 
 ```
 pip install thalassa
-```
-for Selafin files (openTELEMAC outputs):
-```
-pip install thalassa
-pip install xarray-selafin
 ```
 
 ### Conda
@@ -25,6 +20,15 @@ You can also install using conda/mamba:
 ```bash
 mamba install -y -c conda-forge thalassa
 ```
+
+## Additional file formats
+
+`thalassa` is leveraging `xarray` for reading data.
+If you need to open a file in a format that is not supported by default
+you should install the respective `xarray` engine. For example:
+
+- For GRIB files you should `pip install cfgrib`
+- For Selafin files you should install `pip install xarray-selafin`
 
 ## Obtaining Data
 
