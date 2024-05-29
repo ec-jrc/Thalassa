@@ -1,9 +1,19 @@
-# Reference
+# API Reference
 
-::: thalassa
+## High level API
 
-<!-- ::: thalassa.api -->
+::: thalassa.open_dataset
+::: thalassa.normalize
+::: thalassa.plot
+::: thalassa.plot_mesh
+::: thalassa.plot_nodes
+::: thalassa.plot_ts
+::: thalassa.crop
 
-<!-- ::: thalassa.utils -->
-<!---->
-<!-- ::: thalassa.normalization -->
+## Low level API
+
+::: thalassa.api.create_trimesh
+::: thalassa.api.get_tiles
+::: thalassa.api.get_nodes
+::: thalassa.api.get_wireframe
+::: thalassa.api.get_raster
