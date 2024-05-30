@@ -186,10 +186,10 @@ def plot(
     tiles = api.get_tiles()
     components = [tiles, raster]
     if show_mesh:
-        mesh = api.get_wireframe(ds, x_range=x_range, y_range=y_range, hover=False)
+        mesh = api.get_wireframe(trimesh, x_range=x_range, y_range=y_range, hover=False)
         components.append(mesh)
     if show_nodes:
-        nodes = api.get_nodes(ds, x_range=x_range, y_range=y_range, hover=True, size=node_size)
+        nodes = api.get_nodes(trimesh, x_range=x_range, y_range=y_range, hover=True, size=node_size)
         components.append(nodes)
     overlay = hv.Overlay(components)
     dmap = overlay.collate()
