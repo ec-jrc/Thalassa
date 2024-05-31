@@ -44,6 +44,7 @@ xarray = {version = "*", extras = ["io", "accel"]}
 covdefaults = "*"
 ipykernel = "*"
 ipython = "*"
+jupyter-bokeh = "*"
 mypy = ">=1"
 nbmake = "*"
 pandas-stubs = "*"

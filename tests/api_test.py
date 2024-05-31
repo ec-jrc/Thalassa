@@ -9,17 +9,19 @@ from thalassa import api
 from thalassa import normalization
 
 ADCIRC_NC = DATA_DIR / "fort.63.nc"
-SELAFIN = DATA_DIR / "iceland.slf"
+SELAFIN1 = DATA_DIR / "r2d_malpasset-char_p2.slf"
+SELAFIN2 = DATA_DIR / "r2d.V1P3.slf"
 
 @pytest.mark.parametrize(
-    "file,variable",
+    "file,variable,crs",
     [
-        pytest.param(ADCIRC_NC, "zeta"),
-        pytest.param(SELAFIN, "S"),
+        pytest.param(ADCIRC_NC, "zeta", 4326),
+        pytest.param(SELAFIN1, "S", None),
+        pytest.param(SELAFIN2, "HAUTEUR_HM0", 4326),
     ],
 )
-def test_main_api(file, variable):
-    ds = api.open_dataset(file)
+def test_main_api(file, variable, crs):
+    ds = api.open_dataset(file, source_crs=crs)
     assert normalization.is_generic(ds)
 
     # Create objects
@@ -37,7 +39,7 @@ def test_main_api(file, variable):
     hv.render(tap_ts, backend="bokeh")
     hv.render(wireframe, backend="bokeh")
 
-    assert isinstance(nodes, gv.Points)
+    assert isinstance(nodes, (gv.Points, hv.Points))
     assert isinstance(pointer_ts, hv.DynamicMap)
     assert isinstance(raster, hv.DynamicMap)
     assert isinstance(tap_ts, hv.DynamicMap)
@@ -45,16 +47,17 @@ def test_main_api(file, variable):
 
 
 @pytest.mark.parametrize(
-    "file,variable",
+    "file,variable,crs",
     [
-        pytest.param(ADCIRC_NC, "zeta"),
-        pytest.param(SELAFIN, "S"),
+        pytest.param(ADCIRC_NC, "zeta", 4326),
+        pytest.param(SELAFIN1, "S", None),
+        pytest.param(SELAFIN2, "HAUTEUR_HM0", 4326),
     ],
 )
-def test_create_trimesh(file, variable):
-    ds = api.open_dataset(file)
+def test_create_trimesh(file, variable, crs):
+    ds = api.open_dataset(file, source_crs=crs)
     trimesh = api.create_trimesh(ds, variable=variable)
-    assert isinstance(trimesh, gv.TriMesh)
+    assert isinstance(trimesh, (gv.TriMesh, hv.TriMesh))
 
 
 def test_get_tiles():
