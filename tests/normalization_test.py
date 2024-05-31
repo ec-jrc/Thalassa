@@ -12,7 +12,8 @@ from thalassa.normalization import THALASSA_FORMATS
     "ds,expected_fmt",
     [
         pytest.param(api.open_dataset(DATA_DIR / "fort.63.nc", normalize=False), THALASSA_FORMATS.ADCIRC, id="ADCIRC"),
-        pytest.param(api.open_dataset(DATA_DIR / "iceland.slf", normalize=False), THALASSA_FORMATS.TELEMAC, id="TELEMAC"),
+        pytest.param(api.open_dataset(DATA_DIR / "r2d_malpasset-char_p2.slf", normalize=False, source_crs=4326), THALASSA_FORMATS.TELEMAC, id="TELEMAC"),
+        pytest.param(api.open_dataset(DATA_DIR / "r2d.V1P3.slf", normalize=False), THALASSA_FORMATS.TELEMAC, id="TELEMAC"),
         pytest.param(xr.Dataset(), THALASSA_FORMATS.UNKNOWN, id="Unknown"),
     ],
 )
@@ -25,7 +26,8 @@ def test_infer_format(ds, expected_fmt):
     "path,expected",
     [
         pytest.param(DATA_DIR / "fort.63.nc", True, id="ADCIRC"),
-        pytest.param(DATA_DIR / "iceland.slf", True, id="TELEMAC"),
+        pytest.param(DATA_DIR / "r2d_malpasset-char_p2.slf", True, id="TELEMAC"),
+        pytest.param(DATA_DIR / "r2d.V1P3.slf", True, id="TELEMAC"),
         pytest.param(__file__, False, id="Unknown"),
     ],
 )
