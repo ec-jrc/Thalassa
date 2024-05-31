@@ -59,6 +59,7 @@ ADCIRC_VARIABLES_TO_BE_DROPPED = ["neta", "nvel", "max_nvdll", "max_nvell"]
 def open_dataset(
     path: str | os.PathLike[str],
     normalize: bool = True,
+    source_crs: int = 4326,
     **kwargs: dict[str, T.Any],
 ) -> xarray.Dataset:
     """
@@ -86,6 +87,7 @@ def open_dataset(
         path: The path to the dataset file (netCDF, zarr, grib)
         normalize: Boolean flag indicating whether the dataset should be converted/normalized to the "Thalassa schema".
             Normalization is currently only supported for ``SCHISM``, ``TELEMAC``,  and ``ADCIRC`` netcdf files.
+        source_crs: The coordinate system of the dataset (default is WGS84)
         kwargs: The ``kwargs`` are being passed through to ``xarray.open_dataset``.
 
     """
@@ -99,7 +101,7 @@ def open_dataset(
     with warnings.catch_warnings(record=True):
         ds = xr.open_dataset(path, **(default_kwargs | kwargs))
     if normalize:
-        ds = normalization.normalize(ds)
+        ds = normalization.normalize(ds, source_crs=source_crs)
     return ds
 
 
@@ -127,10 +129,11 @@ def create_trimesh(
             If a trimesh object is passed, then return it immediately.
         variable: The data variable we want to visualize
     """
+    import holoviews as hv
     import geoviews as gv
     from cartopy import crs
 
-    if isinstance(ds_or_trimesh, gv.TriMesh):
+    if isinstance(ds_or_trimesh, (gv.TriMesh, hv.TriMesh)):
         # This is already a trimesh, nothing to do
         return ds_or_trimesh
     else:
@@ -142,19 +145,27 @@ def create_trimesh(
         columns.append(variable)
     points_df = ds[columns].to_dataframe()
     # Convert the data to Google Mercator. This makes interactive usage faster
-    transformer = _get_transformer(from_crs="EPSG:4326", to_crs="EPSG:3857")
-    tlon, tlat = transformer.transform(points_df.lon, points_df.lat)
-    points_df = points_df.assign(lon=tlon, lat=tlat)
-    # Create the geoviews object
-    kwargs = dict(data=points_df, kdims=["lon", "lat"], crs=crs.GOOGLE_MERCATOR)
-    if variable:
-        kwargs["vdims"] = [variable]
-    points_gv = gv.Points(**kwargs)
-    # Create the trimesh
-    if variable:
-        trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
+    if ds.attrs["source_crs"]:
+        transformer = _get_transformer(from_crs=ds.attrs["source_crs"], to_crs="EPSG:3857")
+        tlon, tlat = transformer.transform(points_df.lon, points_df.lat)
+        points_df = points_df.assign(lon=tlon, lat=tlat)
+        # Create the geoviews object
+        kwargs = dict(data=points_df, kdims=["lon", "lat"], crs=crs.GOOGLE_MERCATOR)
+        if variable:
+            kwargs["vdims"] = [variable]
+        points_gv = gv.Points(**kwargs)
+        # Create the trimesh
+        if variable:
+            trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
+        else:
+            trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv))
     else:
-        trimesh = gv.TriMesh((ds.triface_nodes.data, points_gv))
+        points_gv = hv.Points(data=points_df, kdims=["lon", "lat"])
+        # Create the trimesh
+        if variable:
+            trimesh = hv.TriMesh((ds.triface_nodes.data, points_gv), name=variable)
+        else:
+            trimesh = hv.TriMesh((ds.triface_nodes.data, points_gv))
     return trimesh
 
 
@@ -184,19 +195,39 @@ def get_nodes(
     """Return a ``DynamicMap`` with the nodes of the mesh."""
     from cartopy import crs
     import geoviews as gv
+    import holoviews as hv
 
     trimesh = create_trimesh(ds_or_trimesh)
+    # determine if there is a crs transformation or not
+    if isinstance(ds_or_trimesh, (gv.TriMesh, hv.TriMesh)):
+        if isinstance(ds_or_trimesh, gv.TriMesh):
+            crs_transform = True
+        else:
+            crs_transform = False
+    else:
+        if ds_or_trimesh.attrs["source_crs"]:
+            crs_transform = True
+        else:
+            crs_transform = False
+
     kwargs: dict[str, T.Any] = {}
     _resolve_ranges(x_range=x_range, y_range=y_range, kwargs=kwargs)
     tools = ["crosshair"]
     if hover:
         tools.append("hover")
-    points = gv.Points(
-        trimesh.nodes.data.rename(columns={"index": "node"}),
-        kdims=["lon", "lat"],
-        vdims=["node"],
-        crs=crs.GOOGLE_MERCATOR,
-    )
+    if crs_transform:
+        points = gv.Points(
+            trimesh.nodes.data.rename(columns={"index": "node"}),
+            kdims=["lon", "lat"],
+            vdims=["node"],
+            crs=crs.GOOGLE_MERCATOR,
+        )
+    else:
+        points = hv.Points(
+            trimesh.nodes.data.rename(columns={"index": "node"}),
+            kdims=["lon", "lat"],
+            vdims=["node"],
+        )
     return points.opts(tools=tools, size=size, title=title, color="green")
 
 
@@ -274,7 +305,6 @@ def get_hover(variable: str) -> bokeh.models.HoverTool:
     return hover
 
 
-
 def _get_stream_timeseries(
     ds: xarray.Dataset,
     variable: str,
@@ -341,7 +371,7 @@ def _get_stream_timeseries(
 def get_station_timeseries(
     stations: xarray.Dataset,
     pins: geoviews.DynamicMap,
-) -> holoviews.DynamicMap:   # pragma: no cover
+) -> holoviews.DynamicMap:  # pragma: no cover
     import holoviews as hv
     import pandas as pd
 

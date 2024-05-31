@@ -184,7 +184,7 @@ def normalize_telemac(ds: xarray.Dataset) -> xarray.Dataset:
 
     # TELEMAC output uses one-based indices for `face_nodes`
     # Let's ensure that we use zero-based indices everywhere.
-    ds[CONNECTIVITY] = ((FACE_DIM, VERTICE_DIM), ds.attrs['ikle2'] - 1)
+    ds[CONNECTIVITY] = ((FACE_DIM, VERTICE_DIM), ds.attrs["ikle2"] - 1)
     return ds
 
 
@@ -227,7 +227,7 @@ NORMALIZE_DISPATCHER = {
 }
 
 
-def normalize(ds: xarray.Dataset) -> xarray.Dataset:
+def normalize(ds: xarray.Dataset, source_crs: int = 4326) -> xarray.Dataset:
     """
     Normalize the `dataset` i.e. convert it to the "Thalassa Schema".
 
@@ -243,12 +243,14 @@ def normalize(ds: xarray.Dataset) -> xarray.Dataset:
 
     Parameters:
         ds: The dataset we want to convert.
+        source_crs: The coordinate system of the dataset (default is WGS84)
 
     """
     logger.debug("Dataset normalization: Started")
     fmt = infer_format(ds)
     normalizer_func = NORMALIZE_DISPATCHER[fmt]
     normalized_ds = normalizer_func(ds)
+    normalized_ds.attrs["source_crs"] = source_crs
     # Handle quad elements
     # Splitting quad elements to triangles, means that the number of faces increases
     # There are two options:
